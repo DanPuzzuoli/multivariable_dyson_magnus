@@ -1,1 +1,1 @@
-# symmetric_perturbation
+# Symmetric Dyson and Magnus terms
