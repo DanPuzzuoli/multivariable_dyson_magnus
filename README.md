@@ -1,1 +1,1 @@
-# Symmetric Dyson and Magnus terms
+# Symmetric Dyson and Magnus computational methods demo supplement
