@@ -25,8 +25,7 @@ def discretized_legendre(degree, N, ran=[-1,1]):
     return np.array(Legendre(coeffs, [0,1.], ran)(np.linspace(0, 1. - dt, N) + (dt / 2)))
 
 def discretized_legendre_basis(max_degree, N, ran=[-1,1]):
-    """Return all discretized legendre polynomials up to a given degree
-    """
+    """Return all discretized legendre polynomials up to a given degree."""
 
     # Note: I'd like to do the following line, but there is some jax issue
     #return vmap(lambda deg: discretized_legendre(deg, T, N, ran))(np.array(list(range(max_degree+1))))
@@ -108,7 +107,7 @@ def get_gaussian_filter(samples, zero_tol=10**-4, kern_sample_rate=1):
     return lambda in_x: fine_1d_conv(in_x, conv_kernel, kern_sample_rate)
 
 def get_param_to_signal(leg_order, N):
-    
+
     dt_awg = 1. # length of time step for piecewise constant signal
     filter_std = 0.5 # std of convolved gaussian
 
@@ -123,22 +122,22 @@ def get_param_to_signal(leg_order, N):
     # Function that applies filter to an array representing a piecewise constant filter
     apply_filter = lambda in_sig: fine_1d_conv(in_sig, gauss_conv, kern_sample_rate=filter_samples_per_awg)
 
-
-    
     # create basis
     signal_basis = discretized_legendre_basis(leg_order, N)
-    
+
     # create diffeomorphism from R into [-1, 1]
     diffeo = get_diffeo([-1, 1])
-    
+
     def param_to_signal(params):
         # take linear combo of discretized legendre polynomials
         leg_linear_combo = np.tensordot(params, signal_basis, axes=1)
-    
+
         # map all samples into [-1,1]
         normalized = vmap(lambda x: diffeo(x), in_axes=1, out_axes=1)(leg_linear_combo)
-    
-        # convolve both X and Y signals, then transpose 
-        return vmap(apply_filter)(normalized.real).transpose() + 0*1j
-    
+
+        components = vmap(apply_filter)(normalized).transpose() + 0 * 1j
+        # convolve both X and Y signals, then transpose
+        #return components
+        return components[:, 0] + 1j * components[:, 1]
+
     return param_to_signal
