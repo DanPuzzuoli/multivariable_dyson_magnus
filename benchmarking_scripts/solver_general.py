@@ -48,13 +48,13 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 
-def main_runner(cpu_count, output_file, vmap_flag, arg_solv="all", num_inputs=10):
+def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10):
 # cpu_count=36
 # output_file='notebook'
 # vmap_flag=True
 # arg_solv='dyson'
     results_db_path = (
-        "/u/brosand/danDynamics/multivariable_dyson_magnus/solver_results.sqlite"
+        f"/u/brosand/danDynamics/multivariable_dyson_magnus/{sql}"
     )
 
     connection = create_connection(results_db_path)
@@ -67,7 +67,7 @@ def main_runner(cpu_count, output_file, vmap_flag, arg_solv="all", num_inputs=10
         == 0
     ):
         cursor.execute(
-            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER)"
+            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER)"
         )
     def write_result(
         cursor,
@@ -93,7 +93,7 @@ def main_runner(cpu_count, output_file, vmap_flag, arg_solv="all", num_inputs=10
             vmap = 0
 
         # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
-        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap]
+        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs]
         columns = [f'"{item}"' if isinstance(item, str) else str(item) for item in columns]
         
         string_columns=",".join(columns)
@@ -389,17 +389,30 @@ def main_runner(cpu_count, output_file, vmap_flag, arg_solv="all", num_inputs=10
         jit_time = time() - start
 
         # loop over and run simulations
-        vmap_sim_func = jit(vmap(sim_func))
-        start = time()
-        vmap_sim_func(jnp.array([input_params[0]])).block_until_ready()
-        vmap_jit_time = time() - start
+        two = False
+        if two:
+            vmap_sim_func = jit(vmap(sim_func))
+            start = time()
+            vmap_sim_func(jnp.array(input_params[:2])).block_until_ready()
+            vmap_jit_time = time() - start
+        else:
+            vmap_sim_func = jit(vmap(sim_func))
+            start = time()
+            vmap_sim_func(jnp.array(input_params)).block_until_ready()
+            vmap_jit_time = time() - start
 
         start = time()
         if vmap_flag:
-            # for i in range(num_inputs)[::2]:
-            #     short_input=jnp.array([input_params[i], input_params[i+1]])
-                # yfs = vmap_sim_func(short_input).block_until_ready()
-            yfs = vmap_sim_func(input_params).block_until_ready()
+            if two:
+                yfs = []
+                for i in range(num_inputs)[::2]:
+                    short_input=jnp.array([input_params[i], input_params[i+1]])
+                    yfs.append(vmap_sim_func(short_input).block_until_ready())
+                # yfs = vmap_sim_func(input_params).block_until_ready()
+                # yfs = jnp.array(yfs)
+                yfs = jnp.concatenate(yfs, axis=0)
+            else:
+                yfs = vmap_sim_func(input_params)
         else:
             yfs = [sim_func(x).block_until_ready() for x in input_params]
         ave_run_time = (time() - start) / len(input_params)
@@ -743,6 +756,7 @@ def main_runner(cpu_count, output_file, vmap_flag, arg_solv="all", num_inputs=10
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a 2q sim.")
     parser.add_argument("--solver", default="all")
+    parser.add_argument("--sql", default="solver_results.sqlite")
     parser.add_argument("--output_name")
     parser.add_argument("--cpus", default=8, type=int)
     parser.add_argument("--n_inputs", default=8, type=int)
@@ -763,6 +777,7 @@ if __name__ == "__main__":
         arg_solv=args.solver,
         vmap_flag=args.vmap,
         num_inputs=args.n_inputs,
+        sql=args.sql,
         # rft=args.rft,
         # args_dict=vars(args),
     )
