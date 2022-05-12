@@ -356,7 +356,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
 
     # num_inputs=30
     if num_inputs < 100:
-        if 100 % num_inputs == 0:
+        if 100 % num_inputs != 0:
             raise NotImplementedError("Number of inputs needs to divide evenly into 100")
         input_params = jnp.array(rng.uniform(low=-2, high=2, size=(100, 6)))
     else:
@@ -396,13 +396,10 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         # loop over and run simulations
         if vmap_flag:
             if num_inputs < 100:
-                if 100 % num_inputs != 0:
-                    raise NotImplementedError("Number of inputs needs to divide into 100")
-                else:
-                    vmap_sim_func = jit(vmap(sim_func))
-                    start = time()
-                    vmap_sim_func(jnp.array(input_params[:num_inputs])).block_until_ready()
-                    vmap_jit_time = time() - start
+                vmap_sim_func = jit(vmap(sim_func))
+                start = time()
+                vmap_sim_func(jnp.array(input_params[:num_inputs])).block_until_ready()
+                vmap_jit_time = time() - start
             else:
                 vmap_sim_func = jit(vmap(sim_func))
                 start = time()
@@ -416,7 +413,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             if num_inputs < 100:
                  yfs = []
                  for i in range(100)[::num_inputs]:
-                     short_input=jnp.array([input_params[i], input_params[i+1]])
+                     short_input=jnp.array(input_params[(i*num_inputs):(i+1) * num_inputs])
                      yfs.append(vmap_sim_func(short_input).block_until_ready())
                  # yfs = vmap_sim_func(input_params).block_until_ready()
                  # yfs = jnp.array(yfs)
