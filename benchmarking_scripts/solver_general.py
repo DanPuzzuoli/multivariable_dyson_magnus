@@ -355,7 +355,12 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     rng = np.random.default_rng(123)
 
     # num_inputs=30
-    input_params = jnp.array(rng.uniform(low=-2, high=2, size=(num_inputs, 6)))
+    if num_inputs < 100:
+        if 100 % num_inputs == 0:
+            raise NotImplementedError("Number of inputs needs to divide evenly into 100")
+        input_params = jnp.array(rng.uniform(low=-2, high=2, size=(100, 6)))
+    else:
+        input_params = jnp.array(rng.uniform(low=-2, high=2, size=(num_inputs, 6)))
 
     # orig = jnp.array([1.4, 1., 0.3, 0., 0., 0.])
 
@@ -389,30 +394,35 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         jit_time = time() - start
 
         # loop over and run simulations
-        two = False
-        if two:
-            vmap_sim_func = jit(vmap(sim_func))
-            start = time()
-            vmap_sim_func(jnp.array(input_params[:2])).block_until_ready()
-            vmap_jit_time = time() - start
+        if vmap_flag:
+            if num_inputs < 100:
+                if 100 % num_inputs != 0:
+                    raise NotImplementedError("Number of inputs needs to divide into 100")
+                else:
+                    vmap_sim_func = jit(vmap(sim_func))
+                    start = time()
+                    vmap_sim_func(jnp.array(input_params[:num_inputs])).block_until_ready()
+                    vmap_jit_time = time() - start
+            else:
+                vmap_sim_func = jit(vmap(sim_func))
+                start = time()
+                vmap_sim_func(jnp.array(input_params)).block_until_ready()
+                vmap_jit_time = time() - start
         else:
-            vmap_sim_func = jit(vmap(sim_func))
-            start = time()
-            vmap_sim_func(jnp.array(input_params)).block_until_ready()
-            vmap_jit_time = time() - start
+            vmap_jit_time = 0 
 
         start = time()
         if vmap_flag:
-            if two:
-                yfs = []
-                for i in range(num_inputs)[::2]:
-                    short_input=jnp.array([input_params[i], input_params[i+1]])
-                    yfs.append(vmap_sim_func(short_input).block_until_ready())
-                # yfs = vmap_sim_func(input_params).block_until_ready()
-                # yfs = jnp.array(yfs)
-                yfs = jnp.concatenate(yfs, axis=0)
+            if num_inputs < 100:
+                 yfs = []
+                 for i in range(100)[::num_inputs]:
+                     short_input=jnp.array([input_params[i], input_params[i+1]])
+                     yfs.append(vmap_sim_func(short_input).block_until_ready())
+                 # yfs = vmap_sim_func(input_params).block_until_ready()
+                 # yfs = jnp.array(yfs)
+                 yfs = jnp.concatenate(yfs, axis=0)
             else:
-                yfs = vmap_sim_func(input_params)
+                yfs = vmap_sim_func(input_params).block_until_ready()
         else:
             yfs = [sim_func(x).block_until_ready() for x in input_params]
         ave_run_time = (time() - start) / len(input_params)
