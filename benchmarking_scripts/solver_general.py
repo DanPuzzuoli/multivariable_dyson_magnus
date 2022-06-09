@@ -413,7 +413,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             if num_inputs < 100:
                  yfs = []
                  for i in range(100)[::num_inputs]:
-                     short_input=jnp.array(input_params[(i*num_inputs):(i+1) * num_inputs])
+                     short_input=jnp.array(input_params[i:(i+num_inputs))])
                      yfs.append(vmap_sim_func(short_input).block_until_ready())
                  # yfs = vmap_sim_func(input_params).block_until_ready()
                  # yfs = jnp.array(yfs)
