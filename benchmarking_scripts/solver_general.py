@@ -54,7 +54,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
 # vmap_flag=True
 # arg_solv='dyson'
     results_db_path = (
-        f"/u/brosand/danDynamics/multivariable_dyson_magnus/{sql}"
+        f"/u/brosand/projects/danDynamics/multivariable_dyson_magnus/{sql}"
     )
 
     connection = create_connection(results_db_path)
@@ -194,7 +194,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     alpha_t = 2 * np.pi * (-0.33721)
     J = 2 * np.pi * 0.002
 
-    dim = 5
+    dim = 10
 
     a = np.diag(np.sqrt(np.arange(1, dim)), 1)
     adag = a.transpose()
@@ -413,8 +413,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             if num_inputs < 100:
                  yfs = []
                  for i in range(100)[::num_inputs]:
-                     short_input=jnp.array(input_params[i:(i+num_inputs))])
-                     yfs.append(vmap_sim_func(short_input).block_until_ready())
+                    short_input=jnp.array(input_params[i:(i+num_inputs)])
+                    yfs.append(vmap_sim_func(short_input).block_until_ready())
                  # yfs = vmap_sim_func(input_params).block_until_ready()
                  # yfs = jnp.array(yfs)
                  yfs = jnp.concatenate(yfs, axis=0)
@@ -433,19 +433,53 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         def fid_func(x):
             yf = sim_func(x)
             return gate_fidelity(yf)
+        # loop over and run grad
+        if vmap_flag:
+            if num_inputs < 100:
+                vmap_grad_func = jit(vmap(value_and_grad(fid_func)))
+                start = time()
+                vmap_grad_func(jnp.array(input_params[:num_inputs])).block_until_ready()
+                vmap_jit_time = time() - start
+            else:
+                vmap_grad_func = jit(vmap(value_and_grad(fid_func)))
+                start = time()
+                vmap_grad_func(jnp.array(input_params)).block_until_ready()
+                vmap_jit_time = time() - start
+        else:
+            vmap_jit_time = 0 
 
-        jit_grad_fid_func = jit(value_and_grad(fid_func))
-
-        # time to jit
         start = time()
-        jit_grad_fid_func(input_params[0])[0].block_until_ready()
-        jit_grad_time = time() - start
+        if vmap_flag:
+            if num_inputs < 100:
+                 yfs = []
+                 for i in range(100)[::num_inputs]:
+                    short_input=jnp.array(input_params[i:(i+num_inputs)])
+                    yfs.append(vmap_grad_func(short_input).block_until_ready())
+                 # yfs = vmap_grad_func(input_params).block_until_ready()
+                 # yfs = jnp.array(yfs)
+                 yfs = jnp.concatenate(yfs, axis=0)
+            else:
+                yfs = vmap_grad_func(input_params).block_until_ready()
+        else:
+            # time to compute gradients
+            jit_grad_fid_func = jit(value_and_grad(fid_func))
+            start = time()
 
-        # time to compute gradients
-        start = time()
-        for x in input_params:
-            jit_grad_fid_func(x)[0].block_until_ready()
-        ave_grad_run_time = (time() - start) / len(input_params)
+            jit_grad_fid_func(input_params[0])[0].block_until_ready()
+            jit_grad_time = time() - start
+            start = time()
+            for x in input_params:
+                jit_grad_fid_func(x)[0].block_until_ready()
+                # yfs = [grad_func(x).block_until_ready() for x in input_params]
+            ave_grad_run_time = (time() - start) / len(input_params)
+
+
+            # time to jit
+
+        # # time to compute gradients
+        # start = time()
+        # for x in input_params:
+        #     jit_grad_fid_func(x)[0].block_until_ready()
 
         return {
             "jit_time": jit_time,
