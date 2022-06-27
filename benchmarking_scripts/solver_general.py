@@ -756,11 +756,11 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                     )
                     perturbative_results.append(test)
 
-                    pert_df = pd.DataFrame(perturbative_results)
-                    # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_dyson_{}.csv'.format(cpu_count))
-                    pert_df.to_csv(
-                        f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dyson_results_{output_file}.csv"
-                    )
+                    # pert_df = pd.DataFrame(perturbative_results)
+                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_dyson_{}.csv'.format(cpu_count))
+                    # pert_df.to_csv(
+                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dyson_results_{output_file}.csv"
+                    # )
 
     if arg_solv in ["magnus", "all"]:
         perturbative_results = []
@@ -801,13 +801,13 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                         cheb_order=metrics["cheb_order"],
                     )
 
-                    perturbative_results.append(test)
+                    # perturbative_results.append(test)
 
-                    pert_df = pd.DataFrame(perturbative_results)
-                    # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_magnus_{}.csv'.format(cpu_count))
-                    pert_df.to_csv(
-                        f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
-                    )
+                    # pert_df = pd.DataFrame(perturbative_results)
+                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_magnus_{}.csv'.format(cpu_count))
+                    # pert_df.to_csv(
+                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
+                    # )
 
 # %% [markdown]
 # We should generate data for perturbative solvers, for both Dyson and Magnus, treating `n_steps` analogously to `tol` for the usual solvers. I.e. for different expansion orders and chebyshev orders, generate the metrics for a range of `n_steps`. We'll need to play around to see what actual values of `n_steps` to explore (e.g. cranking it really high to get as high a tolerance as possible).
@@ -827,7 +827,7 @@ if __name__ == "__main__":
     parser.add_argument("--norft", dest="rft", action="store_false")
     parser.set_defaults(rft=True)
     parser.set_defaults(vmap=False)
-    parser.set_defaults(test=False)
+    parser.set_defaults(test=True)
 
     args = parser.parse_args()
 
