@@ -49,7 +49,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 
-def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test=False):
+def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test_run=False):
 # cpu_count=36
 # output_file='notebook'
 # vmap_flag=True
@@ -91,19 +91,19 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         step_count=0,
         exp_order=0,
         cheb_order=10,
-        test=False
+        test_run=False
     ):
-        if test:
-            test = 1
+        if test_run:
+            test_run = 1
         else:
-            test = 0
+            test_run = 0
         if vmap:
             vmap = 1
         else:
             vmap = 0
 
         # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
-        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test]
+        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test_run]
         columns = [f'"{item}"' if isinstance(item, str) else str(item) for item in columns]
         
         string_columns=",".join(columns)
@@ -364,7 +364,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # %%
     rng = np.random.default_rng(123)
 
-    if test:
+    if test_run:
         num_inputs=2
         min_inputs=2
     else:
@@ -432,7 +432,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                         yfs.append(vmap_sim_func(short_input).block_until_ready())
                         # yfs = vmap_sim_func(input_params).block_until_ready()
                         # yfs = jnp.array(yfs)
-                        yfs = jnp.concatenate(yfs, axis=0)
+                    yfs = jnp.concatenate(yfs, axis=0)
             else:
                 yfs = vmap_sim_func(input_params).block_until_ready()
         else:
@@ -515,7 +515,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # we should run this for up to `k==1e-13`, and possibly even for intermediate values to fill out the curve.
 
     # %%
-    if test:
+    if test_run:
         tols = [10**-k for k in range(6, 8)]
     else:
         tols = [10**-k for k in range(6, 15)]
@@ -827,7 +827,7 @@ if __name__ == "__main__":
     parser.add_argument("--norft", dest="rft", action="store_false")
     parser.set_defaults(rft=True)
     parser.set_defaults(vmap=False)
-    parser.set_defaults(test=True)
+    parser.set_defaults(test=False)
 
     args = parser.parse_args()
 
@@ -840,7 +840,7 @@ if __name__ == "__main__":
         vmap_flag=args.vmap,
         num_inputs=args.n_inputs,
         sql=args.sql,
-        test=args.test
+        test_run=args.test
         # rft=args.rft,
         # args_dict=vars(args),
     )
