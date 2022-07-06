@@ -5,6 +5,7 @@
 
 # %%
 from time import time
+import os
 import argparse
 
 import numpy as np
@@ -48,14 +49,18 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 
-def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10):
+def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test=False):
 # cpu_count=36
 # output_file='notebook'
 # vmap_flag=True
 # arg_solv='dyson'
-    results_db_path = (
-        f"/u/brosand/danDynamics/multivariable_dyson_magnus/{sql}"
-    )
+    test_path = '/u/brosand/projects'
+    if os.path.exists(test_path):
+        results_db_path = (
+            f"/u/brosand/projects/danDynamics/multivariable_dyson_magnus/{sql}"
+        )
+    else:
+        results_db_path=f"/Users/brosand/Documents/GitHub/multivariable_dyson_magnus/{sql}"
 
     connection = create_connection(results_db_path)
     cursor = connection.cursor()
@@ -67,7 +72,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         == 0
     ):
         cursor.execute(
-            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER)"
+            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER, test INTEGER)"
         )
     def write_result(
         cursor,
@@ -86,14 +91,19 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         step_count=0,
         exp_order=0,
         cheb_order=10,
+        test=False
     ):
+        if test:
+            test = 1
+        else:
+            test = 0
         if vmap:
             vmap = 1
         else:
             vmap = 0
 
         # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
-        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs]
+        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test]
         columns = [f'"{item}"' if isinstance(item, str) else str(item) for item in columns]
         
         string_columns=",".join(columns)
@@ -354,11 +364,15 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # %%
     rng = np.random.default_rng(123)
 
-    # num_inputs=30
-    if num_inputs < 100:
-        if 100 % num_inputs != 0:
-            raise NotImplementedError("Number of inputs needs to divide evenly into 100")
-        input_params = jnp.array(rng.uniform(low=-2, high=2, size=(100, 6)))
+    if test:
+        num_inputs=2
+        min_inputs=2
+    else:
+        min_inputs=100
+    if num_inputs < min_inputs:
+        if min_inputs % num_inputs != 0:
+            raise NotImplementedError(f"Number of inputs needs to divide evenly into {min_inputs}")
+        input_params = jnp.array(rng.uniform(low=-2, high=2, size=(min_inputs, 6)))
     else:
         input_params = jnp.array(rng.uniform(low=-2, high=2, size=(num_inputs, 6)))
 
@@ -385,6 +399,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # %%
     from time import time
 
+    
     def compute_solver_metrics(sim_func):
         sim_func = jit(sim_func)
 
@@ -395,7 +410,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
 
         # loop over and run simulations
         if vmap_flag:
-            if num_inputs < 100:
+            if num_inputs < min_inputs:
                 vmap_sim_func = jit(vmap(sim_func))
                 start = time()
                 vmap_sim_func(jnp.array(input_params[:num_inputs])).block_until_ready()
@@ -410,14 +425,14 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
 
         start = time()
         if vmap_flag:
-            if num_inputs < 100:
-                 yfs = []
-                 for i in range(100)[::num_inputs]:
-                     short_input=jnp.array(input_params[(i*num_inputs):(i+1) * num_inputs])
-                     yfs.append(vmap_sim_func(short_input).block_until_ready())
-                 # yfs = vmap_sim_func(input_params).block_until_ready()
-                 # yfs = jnp.array(yfs)
-                 yfs = jnp.concatenate(yfs, axis=0)
+            if num_inputs < min_inputs:
+                    yfs = []
+                    for i in range(min_inputs)[::num_inputs]:
+                        short_input=jnp.array(input_params[i:(i+num_inputs)])
+                        yfs.append(vmap_sim_func(short_input).block_until_ready())
+                        # yfs = vmap_sim_func(input_params).block_until_ready()
+                        # yfs = jnp.array(yfs)
+                        yfs = jnp.concatenate(yfs, axis=0)
             else:
                 yfs = vmap_sim_func(input_params).block_until_ready()
         else:
@@ -433,19 +448,53 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         def fid_func(x):
             yf = sim_func(x)
             return gate_fidelity(yf)
+        # loop over and run grad
+        from jax import grad
+        if vmap_flag:
+            if num_inputs < min_inputs:
+                vmap_grad_func = jit(vmap(grad(fid_func)))
+                start = time()
+                vmap_grad_func(jnp.array(input_params[:num_inputs])).block_until_ready()
+                jit_grad_time = time() - start
+            else:
+                vmap_grad_func = jit(vmap(grad(fid_func)))
+                start = time()
+                vmap_grad_func(jnp.array(input_params)).block_until_ready()
+                jit_grad_time = time() - start
 
-        jit_grad_fid_func = jit(value_and_grad(fid_func))
-
-        # time to jit
         start = time()
-        jit_grad_fid_func(input_params[0])[0].block_until_ready()
-        jit_grad_time = time() - start
+        if vmap_flag:
+            if num_inputs < min_inputs:
+                    yfs = []
+                    for i in range(min_inputs)[::num_inputs]:
+                        short_input=jnp.array(input_params[i:(i+num_inputs)])
+                        yfs.append(vmap_grad_func(short_input).block_until_ready())
+                    # yfs = vmap_grad_func(input_params).block_until_ready()
+                    # yfs = jnp.array(yfs)
+                    yfs = jnp.concatenate(yfs, axis=0)
+            else:
+                yfs = vmap_grad_func(input_params).block_until_ready()
 
-        # time to compute gradients
-        start = time()
-        for x in input_params:
-            jit_grad_fid_func(x)[0].block_until_ready()
+        else:
+            # time to compute gradients
+            jit_grad_fid_func = jit(value_and_grad(fid_func))
+            start = time()
+
+            jit_grad_fid_func(input_params[0])[0].block_until_ready()
+            jit_grad_time = time() - start
+            start = time()
+            for x in input_params:
+                jit_grad_fid_func(x)[0].block_until_ready()
+                # yfs = [grad_func(x).block_until_ready() for x in input_params]
         ave_grad_run_time = (time() - start) / len(input_params)
+
+
+            # time to jit
+
+        # # time to compute gradients
+        # start = time()
+        # for x in input_params:
+        #     jit_grad_fid_func(x)[0].block_until_ready()
 
         return {
             "jit_time": jit_time,
@@ -456,6 +505,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             "jit_vmap_time": vmap_jit_time,
         }
 
+    # %%
+
     # %% [markdown]
     # # Dense simulation
     #
@@ -464,7 +515,10 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # we should run this for up to `k==1e-13`, and possibly even for intermediate values to fill out the curve.
 
     # %%
-    tols = [10**-k for k in range(6, 15)]
+    if test:
+        tols = [10**-k for k in range(6, 8)]
+    else:
+        tols = [10**-k for k in range(6, 15)]
 
     if cpu_count == 0:
         gpu_count = 1
@@ -493,14 +547,15 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 step_count=0,
                 exp_order=0,
                 cheb_order=10,
+                test=test,
             )
 
-        dense_results_df = pd.DataFrame(dense_results)
-        dense_results_df["tol"] = tols
-        # dense_results_df.to_csv('dense_results_cpu_{}.csv'.format(cpu_count))
-        dense_results_df.to_csv(
-            f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dense_results_{output_file}.csv"
-        )
+        # dense_results_df = pd.DataFrame(dense_results)
+        # dense_results_df["tol"] = tols
+        # # dense_results_df.to_csv('dense_results_cpu_{}.csv'.format(cpu_count))
+        # dense_results_df.to_csv(
+        #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dense_results_{output_file}.csv"
+        # )
     # %% [markdown]
     # # Sparse version of simulation
     #
@@ -701,11 +756,11 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                     )
                     perturbative_results.append(test)
 
-                    pert_df = pd.DataFrame(perturbative_results)
-                    # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_dyson_{}.csv'.format(cpu_count))
-                    pert_df.to_csv(
-                        f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dyson_results_{output_file}.csv"
-                    )
+                    # pert_df = pd.DataFrame(perturbative_results)
+                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_dyson_{}.csv'.format(cpu_count))
+                    # pert_df.to_csv(
+                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dyson_results_{output_file}.csv"
+                    # )
 
     if arg_solv in ["magnus", "all"]:
         perturbative_results = []
@@ -746,13 +801,13 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                         cheb_order=metrics["cheb_order"],
                     )
 
-                    perturbative_results.append(test)
+                    # perturbative_results.append(test)
 
-                    pert_df = pd.DataFrame(perturbative_results)
-                    # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_magnus_{}.csv'.format(cpu_count))
-                    pert_df.to_csv(
-                        f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
-                    )
+                    # pert_df = pd.DataFrame(perturbative_results)
+                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_magnus_{}.csv'.format(cpu_count))
+                    # pert_df.to_csv(
+                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
+                    # )
 
 # %% [markdown]
 # We should generate data for perturbative solvers, for both Dyson and Magnus, treating `n_steps` analogously to `tol` for the usual solvers. I.e. for different expansion orders and chebyshev orders, generate the metrics for a range of `n_steps`. We'll need to play around to see what actual values of `n_steps` to explore (e.g. cranking it really high to get as high a tolerance as possible).
@@ -772,7 +827,7 @@ if __name__ == "__main__":
     parser.add_argument("--norft", dest="rft", action="store_false")
     parser.set_defaults(rft=True)
     parser.set_defaults(vmap=False)
-    parser.set_defaults(test=False)
+    parser.set_defaults(test=True)
 
     args = parser.parse_args()
 
@@ -785,6 +840,7 @@ if __name__ == "__main__":
         vmap_flag=args.vmap,
         num_inputs=args.n_inputs,
         sql=args.sql,
+        test=args.test
         # rft=args.rft,
         # args_dict=vars(args),
     )
