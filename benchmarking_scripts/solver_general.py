@@ -204,7 +204,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     alpha_t = 2 * np.pi * (-0.33721)
     J = 2 * np.pi * 0.002
 
-    dim = 5
+    dim = 10
 
     a = np.diag(np.sqrt(np.arange(1, dim)), 1)
     adag = a.transpose()
@@ -518,7 +518,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     if test_run:
         tols = [10**-k for k in range(6, 8)]
     else:
-        tols = [10**-k for k in range(6, 15)]
+        tols = [10**-k for k in range(6, 14)]
 
     if cpu_count == 0:
         gpu_count = 1
@@ -542,12 +542,12 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 cpus=cpu_count,
                 gpus=gpu_count,
                 vmap=vmap_flag,
-                tol=0,
+                tol=tol,
                 construction_time=0,
                 step_count=0,
                 exp_order=0,
                 cheb_order=10,
-                test=test,
+                test_run=test_run,
             )
 
         # dense_results_df = pd.DataFrame(dense_results)
@@ -631,7 +631,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 cpus=cpu_count,
                 gpus=gpu_count,
                 vmap=vmap_flag,
-                tol=0,
+                tol=tol,
                 construction_time=0,
                 step_count=0,
                 exp_order=0,
