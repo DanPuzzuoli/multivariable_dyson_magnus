@@ -27,6 +27,9 @@ import sqlite3
 from sqlite3 import Error
 
 #%%
+PERT_TOL=1e-13
+
+#%%
 def create_connection(path):
     connection = None
     try:
@@ -49,7 +52,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 
-def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test_run=False):
+def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test_run=False, dim=5):
 # cpu_count=36
 # output_file='notebook'
 # vmap_flag=True
@@ -72,7 +75,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         == 0
     ):
         cursor.execute(
-            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER, test INTEGER)"
+            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER, test INTEGER, dim INTEGER)"
         )
     def write_result(
         cursor,
@@ -91,7 +94,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         step_count=0,
         exp_order=0,
         cheb_order=10,
-        test_run=False
+        test_run=False,
+        dim=dim,
     ):
         if test_run:
             test_run = 1
@@ -103,7 +107,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             vmap = 0
 
         # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
-        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test_run]
+        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test_run, dim]
         columns = [f'"{item}"' if isinstance(item, str) else str(item) for item in columns]
         
         string_columns=",".join(columns)
@@ -204,7 +208,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     alpha_t = 2 * np.pi * (-0.33721)
     J = 2 * np.pi * 0.002
 
-    dim = 10
+    dim = dim
 
     a = np.diag(np.sqrt(np.arange(1, dim)), 1)
     adag = a.transpose()
@@ -669,8 +673,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             expansion_method=expansion_method,
             expansion_order=expansion_order,
             integration_method="jax_odeint",
-            atol=1e-13,
-            rtol=1e-13,
+            atol=PERT_TOL,
+            rtol=PERT_TOL,
         )
         construction_time = time() - start
 
@@ -825,6 +829,7 @@ if __name__ == "__main__":
     parser.add_argument("--test", dest="test", action="store_true")
     parser.add_argument("--vmap", dest="vmap", action="store_true")
     parser.add_argument("--norft", dest="rft", action="store_false")
+    parser.add_argument("--dim", default=5, type=int)
     parser.set_defaults(rft=True)
     parser.set_defaults(vmap=False)
     parser.set_defaults(test=False)
@@ -840,7 +845,8 @@ if __name__ == "__main__":
         vmap_flag=args.vmap,
         num_inputs=args.n_inputs,
         sql=args.sql,
-        test_run=args.test
+        test_run=args.test,
+        dim=args.dim
         # rft=args.rft,
         # args_dict=vars(args),
     )
