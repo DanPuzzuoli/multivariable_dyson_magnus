@@ -846,13 +846,13 @@ if __name__ == "__main__":
                     sql=args.sql,
                     test_run=args.test
                 )
-
-    main(
-        cpu_count=args.cpus,
-        output_file=args.output_name,
-        arg_solv=args.solver,
-        vmap_flag=args.vmap,
-        num_inputs=args.n_inputs,
-        sql=args.sql,
-        test_run=args.test
-    )
+    else:
+        main(
+            cpu_count=args.cpus,
+            output_file=args.output_name,
+            arg_solv=args.solver,
+            vmap_flag=args.vmap,
+            num_inputs=args.n_inputs,
+            sql=args.sql,
+            test_run=args.test
+        )
