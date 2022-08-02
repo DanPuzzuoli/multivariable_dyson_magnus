@@ -21,10 +21,13 @@ from jax import jit, value_and_grad, vmap
 from qiskit.quantum_info import Operator
 
 from qiskit_dynamics import Solver, Signal
-from qiskit_dynamics.perturbation import PerturbativeSolver
+from qiskit_dynamics import DysonSolver, MagnusSolver
 
 import sqlite3
 from sqlite3 import Error
+
+#%%
+PERT_TOL = 1e-13
 
 #%%
 def create_connection(path):
@@ -49,18 +52,28 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 
-def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inputs=10, test_run=False):
-# cpu_count=36
-# output_file='notebook'
-# vmap_flag=True
-# arg_solv='dyson'
-    test_path = '/u/brosand/projects'
+def main_runner(
+    cpu_count,
+    output_file,
+    vmap_flag,
+    sql,
+    arg_solv="all",
+    num_inputs=100,
+    test_run=False,
+):
+    # cpu_count=36
+    # output_file='notebook'
+    # vmap_flag=True
+    # arg_solv='dyson'
+    test_path = "/u/brosand/projects"
     if os.path.exists(test_path):
         results_db_path = (
             f"/u/brosand/projects/danDynamics/multivariable_dyson_magnus/{sql}"
         )
     else:
-        results_db_path=f"/Users/brosand/Documents/GitHub/multivariable_dyson_magnus/{sql}"
+        results_db_path = (
+            f"/Users/brosand/Documents/GitHub/multivariable_dyson_magnus/{sql}"
+        )
 
     connection = create_connection(results_db_path)
     cursor = connection.cursor()
@@ -72,8 +85,9 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         == 0
     ):
         cursor.execute(
-            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER, test INTEGER)"
+            "CREATE TABLE benchmarks (solver TEXT, jit_time FLOAT, ave_run_time FLOAT, ave_distance FLOAT, jit_grad_time FLOAT, jit_vmap_time FLOAT, ave_grad_run_time FLOAT, construction_time FLOAT, step_count FLOAT, tol FLOAT, cpus INTEGER, gpus INTEGER, cheb_order INTEGER, exp_order INTEGER, vmap INTEGER, num_inputs INTEGER, test INTEGER, dim INTEGER)"
         )
+
     def write_result(
         cursor,
         solver,
@@ -91,7 +105,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         step_count=0,
         exp_order=0,
         cheb_order=10,
-        test_run=False
+        test_run=False,
+        dim=dim,
     ):
         if test_run:
             test_run = 1
@@ -103,19 +118,35 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             vmap = 0
 
         # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
-        columns = [solver, jit_time, ave_run_time, ave_distance, jit_grad_time, jit_vmap_time, ave_grad_run_time, construction_time, step_count, tol, cpus, gpus, cheb_order, exp_order, vmap, num_inputs, test_run]
-        columns = [f'"{item}"' if isinstance(item, str) else str(item) for item in columns]
-        
-        string_columns=",".join(columns)
-        cursor.execute(
-            f"INSERT INTO benchmarks VALUES ({string_columns})"
+        columns = [
+            solver,
+            jit_time,
+            ave_run_time,
+            ave_distance,
+            jit_grad_time,
+            jit_vmap_time,
+            ave_grad_run_time,
+            construction_time,
+            step_count,
+            tol,
+            cpus,
+            gpus,
+            cheb_order,
+            exp_order,
+            vmap,
+            num_inputs,
+            test_run,
+            dim,
+        ]
+        columns = [
+            f'"{item}"' if isinstance(item, str) else str(item) for item in columns
+        ]
 
-        )
-            # f"INSERT INTO benchmarks(solver {solver}, jit_time {jit_time}, ave_run_time {ave_run_time}, ave_distance {ave_distance}, jit_grad_time {jit_grad_time}, ave_grad_run_time {ave_grad_run_time}, construction_time {construction_time}, step_count {step_count}, tol {tol}, cpus {cpus}, gpus {gpus}, cheb_order {cheb_order}, exp_order {exp_order}, vmap {vmap})"
+        string_columns = ",".join(columns)
+        cursor.execute(f"INSERT INTO benchmarks VALUES ({string_columns})")
+        # f"INSERT INTO benchmarks(solver {solver}, jit_time {jit_time}, ave_run_time {ave_run_time}, ave_distance {ave_distance}, jit_grad_time {jit_grad_time}, ave_grad_run_time {ave_grad_run_time}, construction_time {construction_time}, step_count {step_count}, tol {tol}, cpus {cpus}, gpus {gpus}, cheb_order {cheb_order}, exp_order {exp_order}, vmap {vmap})"
         connection.commit()
         logging.warning("committed to sql table")
-
-
 
     # tell JAX we are using CPU
     gpu = False
@@ -204,7 +235,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     alpha_t = 2 * np.pi * (-0.33721)
     J = 2 * np.pi * 0.002
 
-    dim = 10
+    dim = dim
 
     a = np.diag(np.sqrt(np.arange(1, dim)), 1)
     adag = a.transpose()
@@ -365,13 +396,15 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     rng = np.random.default_rng(123)
 
     if test_run:
-        num_inputs=2
-        min_inputs=2
+        num_inputs = 2
+        min_inputs = 2
     else:
-        min_inputs=100
+        min_inputs = 100
     if num_inputs < min_inputs:
         if min_inputs % num_inputs != 0:
-            raise NotImplementedError(f"Number of inputs needs to divide evenly into {min_inputs}")
+            raise NotImplementedError(
+                f"Number of inputs needs to divide evenly into {min_inputs}"
+            )
         input_params = jnp.array(rng.uniform(low=-2, high=2, size=(min_inputs, 6)))
     else:
         input_params = jnp.array(rng.uniform(low=-2, high=2, size=(num_inputs, 6)))
@@ -399,7 +432,6 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
     # %%
     from time import time
 
-    
     def compute_solver_metrics(sim_func):
         sim_func = jit(sim_func)
 
@@ -421,18 +453,18 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 vmap_sim_func(jnp.array(input_params)).block_until_ready()
                 vmap_jit_time = time() - start
         else:
-            vmap_jit_time = 0 
+            vmap_jit_time = 0
 
         start = time()
         if vmap_flag:
             if num_inputs < min_inputs:
-                    yfs = []
-                    for i in range(min_inputs)[::num_inputs]:
-                        short_input=jnp.array(input_params[i:(i+num_inputs)])
-                        yfs.append(vmap_sim_func(short_input).block_until_ready())
-                        # yfs = vmap_sim_func(input_params).block_until_ready()
-                        # yfs = jnp.array(yfs)
-                    yfs = jnp.concatenate(yfs, axis=0)
+                yfs = []
+                for i in range(min_inputs)[::num_inputs]:
+                    short_input = jnp.array(input_params[i : (i + num_inputs)])
+                    yfs.append(vmap_sim_func(short_input).block_until_ready())
+                    # yfs = vmap_sim_func(input_params).block_until_ready()
+                    # yfs = jnp.array(yfs)
+                yfs = jnp.concatenate(yfs, axis=0)
             else:
                 yfs = vmap_sim_func(input_params).block_until_ready()
         else:
@@ -448,8 +480,10 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         def fid_func(x):
             yf = sim_func(x)
             return gate_fidelity(yf)
+
         # loop over and run grad
         from jax import grad
+
         if vmap_flag:
             if num_inputs < min_inputs:
                 vmap_grad_func = jit(vmap(grad(fid_func)))
@@ -465,13 +499,13 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
         start = time()
         if vmap_flag:
             if num_inputs < min_inputs:
-                    yfs = []
-                    for i in range(min_inputs)[::num_inputs]:
-                        short_input=jnp.array(input_params[i:(i+num_inputs)])
-                        yfs.append(vmap_grad_func(short_input).block_until_ready())
-                    # yfs = vmap_grad_func(input_params).block_until_ready()
-                    # yfs = jnp.array(yfs)
-                    yfs = jnp.concatenate(yfs, axis=0)
+                yfs = []
+                for i in range(min_inputs)[::num_inputs]:
+                    short_input = jnp.array(input_params[i : (i + num_inputs)])
+                    yfs.append(vmap_grad_func(short_input).block_until_ready())
+                # yfs = vmap_grad_func(input_params).block_until_ready()
+                # yfs = jnp.array(yfs)
+                yfs = jnp.concatenate(yfs, axis=0)
             else:
                 yfs = vmap_grad_func(input_params).block_until_ready()
 
@@ -488,8 +522,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 # yfs = [grad_func(x).block_until_ready() for x in input_params]
         ave_grad_run_time = (time() - start) / len(input_params)
 
-
-            # time to jit
+        # time to jit
 
         # # time to compute gradients
         # start = time()
@@ -538,7 +571,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 ave_distance=metrics["ave_distance"],
                 jit_grad_time=metrics["jit_grad_time"],
                 ave_grad_run_time=metrics["ave_grad_run_time"],
-                jit_vmap_time=metrics['jit_vmap_time'],
+                jit_vmap_time=metrics["jit_vmap_time"],
                 cpus=cpu_count,
                 gpus=gpu_count,
                 vmap=vmap_flag,
@@ -627,7 +660,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                 ave_distance=metrics["ave_distance"],
                 jit_grad_time=metrics["jit_grad_time"],
                 ave_grad_run_time=metrics["ave_grad_run_time"],
-                jit_vmap_time=metrics['jit_vmap_time'],
+                jit_vmap_time=metrics["jit_vmap_time"],
                 cpus=cpu_count,
                 gpus=gpu_count,
                 vmap=vmap_flag,
@@ -669,8 +702,8 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
             expansion_method=expansion_method,
             expansion_order=expansion_order,
             integration_method="jax_odeint",
-            atol=1e-13,
-            rtol=1e-13,
+            atol=PERT_TOL,
+            rtol=PERT_TOL,
         )
         construction_time = time() - start
 
@@ -744,7 +777,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                         ave_distance=metrics["ave_distance"],
                         jit_grad_time=metrics["jit_grad_time"],
                         ave_grad_run_time=metrics["ave_grad_run_time"],
-                        jit_vmap_time=metrics['jit_vmap_time'],
+                        jit_vmap_time=metrics["jit_vmap_time"],
                         cpus=cpu_count,
                         gpus=gpu_count,
                         vmap=vmap_flag,
@@ -790,7 +823,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                         ave_distance=metrics["ave_distance"],
                         jit_grad_time=metrics["jit_grad_time"],
                         ave_grad_run_time=metrics["ave_grad_run_time"],
-                        jit_vmap_time=metrics['jit_vmap_time'],
+                        jit_vmap_time=metrics["jit_vmap_time"],
                         cpus=cpu_count,
                         gpus=gpu_count,
                         vmap=vmap_flag,
@@ -809,6 +842,7 @@ def main_runner(cpu_count, output_file, vmap_flag, sql, arg_solv="all", num_inpu
                     #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
                     # )
 
+
 # %% [markdown]
 # We should generate data for perturbative solvers, for both Dyson and Magnus, treating `n_steps` analogously to `tol` for the usual solvers. I.e. for different expansion orders and chebyshev orders, generate the metrics for a range of `n_steps`. We'll need to play around to see what actual values of `n_steps` to explore (e.g. cranking it really high to get as high a tolerance as possible).
 #
@@ -821,26 +855,42 @@ if __name__ == "__main__":
     parser.add_argument("--sql", default="solver_results.sqlite")
     parser.add_argument("--output_name")
     parser.add_argument("--cpus", default=8, type=int)
-    parser.add_argument("--n_inputs", default=8, type=int)
-    parser.add_argument("--test", dest="test", action="store_true")
-    parser.add_argument("--vmap", dest="vmap", action="store_true")
-    parser.add_argument("--norft", dest="rft", action="store_false")
-    parser.set_defaults(rft=True)
-    parser.set_defaults(vmap=False)
-    parser.set_defaults(test=False)
+    parser.add_argument("--n_inputs", default=100, type=int)
+    parser.add_argument("--dim", default=5, type=int)
+    parser.add_argument("--test", dest="test", action="store_true", default=False)
+    parser.add_argument("--vmap", dest="vmap", action="store_true", default=False)
+    parser.add_argument(
+        "--full_run", dest="full_run", action="store_true", default=False
+    )
 
     args = parser.parse_args()
 
     logging.warning(f"arg_solv is {args.solver}")
 
-    main_runner(
-        cpu_count=args.cpus,
-        output_file=args.output_name,
-        arg_solv=args.solver,
-        vmap_flag=args.vmap,
-        num_inputs=args.n_inputs,
-        sql=args.sql,
-        test_run=args.test
-        # rft=args.rft,
-        # args_dict=vars(args),
-    )
+    if args.full_run:
+        solvers = ["ODE Solver", "Dyson", "magnus"]
+        n_inputs = [1, 50, 100]
+        for solver_choice in solvers:
+            for input_count in n_inputs:
+                main_runner(
+                    cpu_count=args.cpus,
+                    output_file=args.output_name,
+                    arg_solv=solver_choice,
+                    vmap_flag=args.vmap,
+                    num_inputs=input_count,
+                    sql=args.sql,
+                    test_run=args.test,
+                    dim=args.dim,
+                )
+    else:
+
+        main_runner(
+            cpu_count=args.cpus,
+            output_file=args.output_name,
+            arg_solv=args.solver,
+            vmap_flag=args.vmap,
+            num_inputs=args.n_inputs,
+            sql=args.sql,
+            test_run=args.test,
+            dim=args.dim,
+        )
