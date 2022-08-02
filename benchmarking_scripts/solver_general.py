@@ -60,6 +60,7 @@ def main_runner(
     arg_solv="all",
     num_inputs=100,
     test_run=False,
+    dim=5,
 ):
     # cpu_count=36
     # output_file='notebook'
@@ -691,20 +692,37 @@ def main_runner(
     ):
         dt = T / n_steps
 
-        # construct solver
+
         start = time()
-        perturb_solver = PerturbativeSolver(
-            operators=operators,
-            rotating_frame=frame_operator,
-            dt=dt,
-            carrier_freqs=carrier_freqs,
-            chebyshev_orders=[chebyshev_order] * 2,
-            expansion_method=expansion_method,
-            expansion_order=expansion_order,
-            integration_method="jax_odeint",
-            atol=PERT_TOL,
-            rtol=PERT_TOL,
-        )
+        if expansion_method == "Dyson":
+            perturb_solver = DysonSolver(
+                operators=operators,
+                rotating_frame=frame_operator,
+                dt=dt,
+                carrier_freqs=carrier_freqs,
+                chebyshev_orders=[chebyshev_order] * 2,
+                expansion_method=expansion_method,
+                expansion_order=expansion_order,
+                integration_method="jax_odeint",
+                atol=PERT_TOL,
+                rtol=PERT_TOL,
+            )
+        elif expansion_method == "magnus":
+            perturb_solver = DysonSolver(
+                operators=operators,
+                rotating_frame=frame_operator,
+                dt=dt,
+                carrier_freqs=carrier_freqs,
+                chebyshev_orders=[chebyshev_order] * 2,
+                expansion_method=expansion_method,
+                expansion_order=expansion_order,
+                integration_method="jax_odeint",
+                atol=PERT_TOL,
+                rtol=PERT_TOL,
+            )
+ 
+        # construct solver
+      
         construction_time = time() - start
 
         def perturb_sim(params):
