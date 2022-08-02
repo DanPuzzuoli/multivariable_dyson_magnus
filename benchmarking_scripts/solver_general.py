@@ -708,7 +708,7 @@ def main_runner(
                 rtol=PERT_TOL,
             )
         elif expansion_method == "magnus":
-            perturb_solver = DysonSolver(
+            perturb_solver = MagnusSolver(
                 operators=operators,
                 rotating_frame=frame_operator,
                 dt=dt,
