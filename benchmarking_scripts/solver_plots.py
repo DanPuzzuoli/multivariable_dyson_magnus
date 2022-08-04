@@ -12,6 +12,12 @@ from math import factorial
 
 mpl.rcParams["figure.dpi"] = 300
 #%%
+
+connection = sqlite3.connect("cpu_data.sqlite")
+# df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
+df.to_sql("benchmarks", con=connection, if_exists="replace")
+
+plot_folder = "new_plots"
 connection = sqlite3.connect("paper_gpu.sqlite")
 df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
 plot_folder = "new_plots"

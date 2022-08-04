@@ -1,5 +1,4 @@
 #%%
-import pandas as pd
 import matplotlib as mpl
 import seaborn as sns
 import pandas as pd
@@ -12,9 +11,14 @@ from math import factorial
 
 mpl.rcParams["figure.dpi"] = 300
 #%%
-connection = sqlite3.connect("paper_j5.sqlite")
-df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
-plot_folder = "new_plots"
+SQL = True
+if SQL:
+    connection = sqlite3.connect("cpu_data.sqlite")
+    df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
+    plot_folder = "new_plots"
+else:
+    df = pd.read_csv("cpu_data.csv")
+    plot_folder = "new_plots"
 # %%
 # Label the rows of the dataframe with solver, gpu usage, and number of vmapped inputs
 def labeler(row):
@@ -25,7 +29,10 @@ def labeler(row):
     else:
         cores = row["cpus"]
 
-    label = f"{solver} {cores}"
+    if cores == 1:
+        label = f"{solver} {cores} core"
+    else:
+        label = f"{solver} {cores} cores"
 
     if not row["vmap"]:
         label = label + "_serial"
@@ -36,19 +43,21 @@ def labeler(row):
 color_palette = "tab10"
 
 df_plot = df.copy()
-df_plot["label"] = df_plot.apply(labeler, axis=1)
 df_plot["total_run_time"] = df_plot["ave_run_time"].map(lambda x: x * 100)
 df_plot["total_grad_run_time"] = df_plot["ave_grad_run_time"].map(lambda x: x * 100)
 df_plot["solver"] = df_plot["solver"].map(
     lambda x: {"dense": "ODE Solver", "dyson": "Dyson", "magnus": "Magnus"}[x]
 )
+df_plot["label"] = df_plot.apply(labeler, axis=1)
 df_plot = df_plot.sort_values(by="label")
 df_plot = df_plot[df_plot["gpus"] == 0]
+df_plot = df_plot[df_plot["cpus"].isin([1, 64])]
+df_plot = df_plot[df_plot["num_inputs"].isin([1, 50, 100])]
 
 # %%
 # Plot average distance vs total gradient run time for 100 inputs, for each solver
 fig, ax = plt.subplots(figsize=(4, 4))
-n_colors = df_plot.solver.nunique()
+n_colors = df_plot.label.nunique()
 df_plot = df_plot.sort_values(by="solver")
 grid = sns.scatterplot(
     x="total_grad_run_time",
@@ -56,9 +65,9 @@ grid = sns.scatterplot(
     ax=ax,
     data=df_plot,
     palette=sns.color_palette(color_palette, n_colors=n_colors),
-    hue="solver",
-    style="solver",
-    markers=["o", "X", "s"],
+    hue="label",
+    style="label",
+    markers=["o", "o", "X", "X", "s", "s",],
 )
 
 ax.set(xscale="log", yscale="log")
@@ -122,9 +131,12 @@ def find_nearest_below(row1, df2, label="total_run_time"):
 #%%
 # Plot the speedup ratios of the perturbative solvers vs the ODE solver for normal and gradient run time
 df1 = df_plot[df_plot["solver"] == "ODE Solver"]
+df1 = df1[df1["cpus"] == 1]
+df1 = df1[df1["num_inputs"] == 100]
 df1 = df1.sort_values(by="total_run_time")
 df1.drop_duplicates(subset="tol", keep="first", inplace=True)
 df4 = df_plot[df_plot["solver"] != "ODE Solver"]
+df4 = df4[df4["cpus"] == 1]
 #%%
 df1[["Perturbative Speedup", "Solver", "pert_speed"]] = df1.apply(
     find_nearest_below, df2=df4, axis=1, result_type="expand", label="total_run_time"
@@ -143,12 +155,12 @@ grid2 = sns.scatterplot(
 )
 grid = sns.scatterplot(y="Perturbative Speedup", x="ave_distance", data=df1, ax=axs[0])
 axs[0].set(xscale="log")
-axs[0].set_title("Perturbative solver speedup on cpu")
+axs[0].set_title("Perturbative solver speedup on 1 CPU core")
 axs[0].set_xlabel("Average Distance")
 axs[0].set_ylim(bottom=0)
 
 axs[1].set(xscale="log")
-axs[1].set_title("Perturbative solver gradient speedup on cpu")
+axs[1].set_title("Perturbative solver gradient speedup on 1 CPU core")
 axs[1].set_xlabel("Average Distance")
 axs[1].set_ylim(bottom=0)
 

@@ -172,9 +172,9 @@ def main_runner(
         """Gaussian square pulse."""
 
         t = Array(t).data
-        C = jnp.exp(-((2 * risefall * sigma) ** 2) / (8 * sigma**2))
+        C = jnp.exp(-((2 * risefall * sigma) ** 2) / (8 * sigma ** 2))
         den = (
-            jnp.sqrt(jnp.pi * 2 * sigma**2)
+            jnp.sqrt(jnp.pi * 2 * sigma ** 2)
             * erf(2 * risefall * sigma / (jnp.sqrt(8) * sigma))
             - 2 * risefall * sigma * C
         )
@@ -183,11 +183,11 @@ def main_runner(
             condlist=[t < (risefall * sigma), (T - t) < (risefall * sigma)],
             funclist=[
                 lambda s: (
-                    jnp.exp(-((s - sigma * risefall) ** 2) / (2 * sigma**2)) - C
+                    jnp.exp(-((s - sigma * risefall) ** 2) / (2 * sigma ** 2)) - C
                 )
                 / den,
                 lambda s: (
-                    jnp.exp(-((T - s - sigma * risefall) ** 2) / (2 * sigma**2)) - C
+                    jnp.exp(-((T - s - sigma * risefall) ** 2) / (2 * sigma ** 2)) - C
                 )
                 / den,
                 lambda s: (1 - C) / den,
@@ -241,7 +241,7 @@ def main_runner(
     adag = a.transpose()
     N = np.diag(np.arange(dim))
     ident = np.eye(dim)
-    ident2 = np.eye(dim**2)
+    ident2 = np.eye(dim ** 2)
 
     # operators on the control qubit (first tensor factor)
     a0 = np.kron(a, ident)
@@ -316,13 +316,13 @@ def main_runner(
     idx10 = get_dressed_state_index(1, 0, dim, B.transpose())
     idx11 = get_dressed_state_index(1, 1, dim, B.transpose())
 
-    e00 = np.zeros(dim**2, dtype=complex)
+    e00 = np.zeros(dim ** 2, dtype=complex)
     e00[0] = 1.0
-    e10 = np.zeros(dim**2, dtype=complex)
+    e10 = np.zeros(dim ** 2, dtype=complex)
     e10[idx10] = 1.0
-    e01 = np.zeros(dim**2, dtype=complex)
+    e01 = np.zeros(dim ** 2, dtype=complex)
     e01[idx01] = 1.0
-    e11 = np.zeros(dim**2, dtype=complex)
+    e11 = np.zeros(dim ** 2, dtype=complex)
     e11[idx11] = 1.0
 
     # set up observables
@@ -335,7 +335,7 @@ def main_runner(
     target_conj = target.conj()
 
     def fidelity(U):
-        return jnp.abs(jnp.sum(target_conj * U)) ** 2 / (4**2)
+        return jnp.abs(jnp.sum(target_conj * U)) ** 2 / (4 ** 2)
 
     # %% [markdown]
     # # 3. Construct dense version of simulation
@@ -349,7 +349,7 @@ def main_runner(
         rotating_frame=np.diag(H0_B),
     )
 
-    y0 = np.eye(dim**2, dtype=complex)
+    y0 = np.eye(dim ** 2, dtype=complex)
 
     def ode_sim(params, tol):
         cr_amp = params[0]
@@ -427,7 +427,7 @@ def main_runner(
     target_conj = target.conj()
 
     def gate_fidelity(U):
-        return jnp.abs(jnp.sum(target_conj * U)) ** 2 / (4**2)
+        return jnp.abs(jnp.sum(target_conj * U)) ** 2 / (4 ** 2)
 
     # %%
     from time import time
@@ -549,9 +549,9 @@ def main_runner(
 
     # %%
     if test_run:
-        tols = [10**-k for k in range(6, 8)]
+        tols = [10 ** -k for k in range(6, 8)]
     else:
-        tols = [10**-k for k in range(6, 14)]
+        tols = [10 ** -k for k in range(6, 14)]
 
     if cpu_count == 0:
         gpu_count = 1

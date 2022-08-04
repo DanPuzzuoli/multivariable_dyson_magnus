@@ -775,8 +775,6 @@ def main(
                     )
                     perturbative_results.append(test)
 
-
-
     if arg_solv in ["magnus", "all"]:
         perturbative_results = []
 
@@ -827,7 +825,9 @@ if __name__ == "__main__":
     parser.add_argument("--n_inputs", default=8, type=int)
     parser.add_argument("--test", dest="test", action="store_true", default=False)
     parser.add_argument("--vmap", dest="vmap", action="store_true", default=False)
-    parser.add_argument("--full_run", dest="full_run", action="store_true", default=False)
+    parser.add_argument(
+        "--full_run", dest="full_run", action="store_true", default=False
+    )
 
     args = parser.parse_args()
 
@@ -844,7 +844,7 @@ if __name__ == "__main__":
                     vmap_flag=args.vmap,
                     num_inputs=input_count,
                     sql=args.sql,
-                    test_run=args.test
+                    test_run=args.test,
                 )
     else:
         main(
@@ -854,5 +854,5 @@ if __name__ == "__main__":
             vmap_flag=args.vmap,
             num_inputs=args.n_inputs,
             sql=args.sql,
-            test_run=args.test
+            test_run=args.test,
         )
