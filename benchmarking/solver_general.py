@@ -62,10 +62,6 @@ def main_runner(
     test_run=False,
     dim=5,
 ):
-    # cpu_count=36
-    # output_file='notebook'
-    # vmap_flag=True
-    # arg_solv='dyson'
     test_path = "/u/brosand/projects"
     if os.path.exists(test_path):
         results_db_path = (
@@ -78,7 +74,6 @@ def main_runner(
 
     connection = create_connection(results_db_path)
     cursor = connection.cursor()
-    # cursor.execute(SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}')
     if (
         cursor.execute(
             "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='benchmarks'"
@@ -118,7 +113,6 @@ def main_runner(
         else:
             vmap = 0
 
-        # columns = ["solver", "jit_time", "ave_run_time", "ave_distance", "jit_grad", "ave_grad_run_time", "construction_time", "step_count", "tol", "cpus", "gpus", "cheb_order", "exp_order", "vmap"]
         columns = [
             solver,
             jit_time,
@@ -145,7 +139,6 @@ def main_runner(
 
         string_columns = ",".join(columns)
         cursor.execute(f"INSERT INTO benchmarks VALUES ({string_columns})")
-        # f"INSERT INTO benchmarks(solver {solver}, jit_time {jit_time}, ave_run_time {ave_run_time}, ave_distance {ave_distance}, jit_grad_time {jit_grad_time}, ave_grad_run_time {ave_grad_run_time}, construction_time {construction_time}, step_count {step_count}, tol {tol}, cpus {cpus}, gpus {gpus}, cheb_order {cheb_order}, exp_order {exp_order}, vmap {vmap})"
         connection.commit()
         logging.warning("committed to sql table")
 
@@ -523,13 +516,6 @@ def main_runner(
                 # yfs = [grad_func(x).block_until_ready() for x in input_params]
         ave_grad_run_time = (time() - start) / len(input_params)
 
-        # time to jit
-
-        # # time to compute gradients
-        # start = time()
-        # for x in input_params:
-        #     jit_grad_fid_func(x)[0].block_until_ready()
-
         return {
             "jit_time": jit_time,
             "ave_run_time": ave_run_time,
@@ -584,16 +570,8 @@ def main_runner(
                 test_run=test_run,
             )
 
-        # dense_results_df = pd.DataFrame(dense_results)
-        # dense_results_df["tol"] = tols
-        # # dense_results_df.to_csv('dense_results_cpu_{}.csv'.format(cpu_count))
-        # dense_results_df.to_csv(
-        #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dense_results_{output_file}.csv"
-        # )
     # %% [markdown]
     # # Sparse version of simulation
-    #
-    # For sparse simulation we need to make sure we are in a basis in which the operators are actually sparse.
 
     # %%
     sparse_solver = Solver(
@@ -692,7 +670,6 @@ def main_runner(
     ):
         dt = T / n_steps
 
-
         start = time()
         if expansion_method == "Dyson":
             perturb_solver = DysonSolver(
@@ -720,9 +697,9 @@ def main_runner(
                 atol=PERT_TOL,
                 rtol=PERT_TOL,
             )
- 
+
         # construct solver
-      
+
         construction_time = time() - start
 
         def perturb_sim(params):
@@ -807,12 +784,6 @@ def main_runner(
                     )
                     perturbative_results.append(test)
 
-                    # pert_df = pd.DataFrame(perturbative_results)
-                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_dyson_{}.csv'.format(cpu_count))
-                    # pert_df.to_csv(
-                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/dyson_results_{output_file}.csv"
-                    # )
-
     if arg_solv in ["magnus", "all"]:
         perturbative_results = []
 
@@ -851,14 +822,6 @@ def main_runner(
                         exp_order=metrics["exp_order"],
                         cheb_order=metrics["cheb_order"],
                     )
-
-                    # perturbative_results.append(test)
-
-                    # pert_df = pd.DataFrame(perturbative_results)
-                    # # pert_df.to_csv('/u/brosand/danDynamics/multivariable_dyson_magnus/results/perturbative_results_cpu_magnus_{}.csv'.format(cpu_count))
-                    # pert_df.to_csv(
-                    #     f"/u/brosand/danDynamics/multivariable_dyson_magnus/results/magnus_results_{output_file}.csv"
-                    # )
 
 
 # %% [markdown]
