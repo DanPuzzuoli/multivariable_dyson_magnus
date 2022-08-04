@@ -44,7 +44,6 @@ def get_diffeo(image=[-1, 1]):
 
     return lambda x: jnp.arctan(x)/(jnp.pi/2) * (width / 2) + image[0] + (width / 2)
 
-
 def fine_1d_conv(in_x, kernel, kern_sample_rate=1):
     """Convolve input with a kernel, with kern_sample_rate giving the number of samples in
     kernel per sample of in_x.
@@ -61,16 +60,22 @@ def fine_1d_conv(in_x, kernel, kern_sample_rate=1):
     Returns:
         array: convolved signal
     """
-
-    # expand the input
-    # this may actually be doable with conv_general_dilated
     expanded = vmap(lambda x: x * jnp.ones(kern_sample_rate))(in_x).flatten()
-    kernel_len = len(kernel)
 
-    return conv_general_dilated(jnp.array([[expanded]]),
-                                jnp.array([[kernel]]),
-                                (1,),
-                                padding=[(kernel_len,kernel_len)] )[0,0]
+    kernel_len = len(kernel)
+    padding = jnp.zeros(kernel_len, dtype=in_x.dtype)
+
+    padded = jnp.append(padding, jnp.append(expanded, padding))
+
+    def single_conv(idx):
+        return jnp.dot(kernel, padded[idx:(idx + kernel_len)])
+
+    out = []
+    for idx in range(len(padded) - kernel_len + 1):
+        out.append(jnp.dot(kernel,  padded[idx:(idx + kernel_len)]))
+
+    return jnp.array(out)
+
 
 # gaussian function
 def gaussian(x, amp, mean, sig):
