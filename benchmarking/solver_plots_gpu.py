@@ -12,19 +12,15 @@ from math import factorial
 
 mpl.rcParams["figure.dpi"] = 300
 #%%
-
-# connection = sqlite3.connect("cpu_data.sqlite")
-# # df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
-# df.to_sql("benchmarks", con=connection, if_exists="replace")
-
-plot_folder = "new_plots"
+plot_folder = "plot_folder"
 connection = sqlite3.connect("paper_gpu.sqlite")
 df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
-plot_folder = "new_plots"
 #%%
+# DELETE THIS
 df = df[df["gpus"] == 1]
 connection = sqlite3.connect("gpu_data.sqlite")
 df.to_sql("benchmarks", con=connection, if_exists="replace")
+df.to_csv("gpu_data.csv")
 # %%
 # Label the rows of the dataframe with solver, gpu usage, and number of vmapped inputs
 def labeler(row):
