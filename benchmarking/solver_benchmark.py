@@ -372,11 +372,8 @@ def main_runner(
 
         target_signal = (rotary_signal + bipolar_signal).flatten()
 
-        solver_copy = dense_solver.copy()
-
-        solver_copy.signals = [cr_signal, target_signal]
-        results = solver_copy.solve(
-            t_span=[0, T], y0=y0, method="jax_odeint", atol=tol, rtol=tol
+        results = dense_solver.solve(
+            t_span=[0, T], y0=y0, method="jax_odeint", atol=tol, rtol=tol, signals=[cr_signal, target_signal]
         )
         return results.y[-1]
 
@@ -610,15 +607,12 @@ def main_runner(
 
         target_signal = (rotary_signal + bipolar_signal).flatten()
 
-        solver_copy = sparse_solver.copy()
-
-        solver_copy.signals = [cr_signal, target_signal]
-        results = solver_copy.solve(
-            t_span=[0, T], y0=y0_sparse, method="jax_odeint", atol=tol, rtol=tol
+        results = sparse_solver.solve(
+            t_span=[0, T], y0=y0_sparse, method="jax_odeint", atol=tol, rtol=tol, signals=[cr_signal, target_signal]
         )
 
         # transfer unitary into same basis and frame as the dense simulation
-        U = Array(Badj) @ solver_copy.model.rotating_frame.state_out_of_frame(
+        U = Array(Badj) @ sparse_solver.model.rotating_frame.state_out_of_frame(
             T, results.y[-1]
         )
         U = dense_solver.model.rotating_frame.state_into_frame(T, U).data
