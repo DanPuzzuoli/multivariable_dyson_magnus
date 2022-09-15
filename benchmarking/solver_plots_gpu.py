@@ -13,14 +13,27 @@ from math import factorial
 mpl.rcParams["figure.dpi"] = 300
 #%%
 plot_folder = "plot_folder"
-connection = sqlite3.connect("paper_gpu.sqlite")
+connection = sqlite3.connect("data/gpu_data.sqlite")
 df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
 #%%
-# DELETE THIS
-df = df[df["gpus"] == 1]
-connection = sqlite3.connect("gpu_data.sqlite")
-df.to_sql("benchmarks", con=connection, if_exists="replace")
-df.to_csv("gpu_data.csv")
+# # DELETE THIS
+# df = df[df["gpus"] == 1]
+# connection = sqlite3.connect("gpu_data.sqlite")
+# df.to_sql("benchmarks", con=connection, if_exists="replace")
+# df.to_csv("gpu_data.csv")
+#%%
+# Define some helper functions for calculating the 'term count` of each perturbative solver configuration
+def choose(n, k):
+    # n choose k:
+    return factorial(n) / (factorial(k) * factorial(n - k))
+
+
+def term_count(n, c):
+
+    return int(choose(((4 * (c + 1)) + n), n) - 1)
+
+
+
 # %%
 # Label the rows of the dataframe with solver, gpu usage, and number of vmapped inputs
 def labeler(row):
@@ -62,7 +75,80 @@ df_plot["solver"] = df_plot["solver"].map(
 df_plot = df_plot.sort_values(by="label")
 df_plot = df_plot[df_plot["gpus"] == 1]
 
-# %%
+df_plot["num_terms"] = df_plot.apply(
+    lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
+)
+
+# Plot average distance vs total run time for 100 inputs, for each solver
+fig, ax = plt.subplots(figsize=(4, 4))
+n_colors = df_plot.solver.nunique()
+df_plot = df_plot.sort_values(by="solver")
+
+df_plot = df_plot[(df_plot['num_inputs'] == 100) | (df_plot['solver'].isin(['Magnus', 'Dyson']))]
+
+dfD = df_plot[df_plot['solver'] == 'Dyson']
+dfM = df_plot[df_plot['solver'] == 'Magnus']
+dfO = df_plot[df_plot['solver'] == 'ODE Solver']
+
+dfD1 = dfD[(dfD['cheb_order'] == 2) & (dfD['exp_order'] == 5)]
+dfD1['label'] = f'Dyson with term count {dfD1.iloc[0]["num_terms"]}'
+dfD2 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 4)]
+dfD2['label'] = f'Dyson with term count {dfD2.iloc[0]["num_terms"]}'
+dfD3 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 2)]
+dfD3['label'] = f'Dyson with term count {dfD3.iloc[0]["num_terms"]}'
+dfD4 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 3)]
+dfD4['label'] = f'Dyson with term count {dfD4.iloc[0]["num_terms"]}'
+# dfD = pd.concat([dfD1, dfD2,dfD4])
+
+dfM1 = dfM[(dfM['cheb_order'] == 1) & (dfM['exp_order'] == 3)]
+dfM1['label'] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
+dfM2 = dfM[(dfM['cheb_order'] == 0) & (dfM['exp_order'] == 2)]
+dfM2['label'] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
+
+
+dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
+# dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
+dfM = pd.concat([dfM1, dfM2] )
+
+# df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
+# df_plotM = dfM.groupby(pd.cut(np.log(dfM['ave_distance']), 30)).min()
+
+
+# df_plotD = dfD.loc[dfD['ave_distance']==dfD['ave_distance'].min()]
+# df_plotM = dfM.loc[dfM['ave_distance']==dfM['ave_distance'].min()]
+# df_plotO = dfO.loc[dfO['ave_distance']==dfO['ave_distance'].min()]
+
+# df_plot = pd.concat([df_plotD, df_plotM, dfO])
+df_plot = pd.concat([dfD, dfM, dfO])
+
+df_plot.dropna(inplace=True)
+
+grid = sns.scatterplot(
+    y="total_run_time",
+    x="ave_distance",
+    ax=ax,
+    data=df_plot,
+    palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
+    hue="label",
+    style="solver",
+    markers=["o", "X", "s"],
+)
+
+ax.set(xscale="log", yscale="log")
+ax.set_title("Distance vs run time for 100 inputs on gpu")
+ax.set_xlabel("Average Distance")
+ax.set_ylabel("Total Run Time (s)")
+
+plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.savefig(
+    os.path.join(plot_folder, "distance_v_time.png"),
+    facecolor="white",
+    bbox_inches="tight",
+)
+
+plt.show()
+
+#%%
 # Plot average distance vs total gradient run time for 100 inputs, for each solver
 fig, ax = plt.subplots(figsize=(4, 4))
 n_colors = df_plot.solver.nunique()
@@ -176,18 +262,6 @@ plt.savefig(
 )
 
 plt.show()
-#%%
-# Define some helper functions for calculating the 'term count` of each perturbative solver configuration
-def choose(n, k):
-    # n choose k:
-    return factorial(n) / (factorial(k) * factorial(n - k))
-
-
-def term_count(n, c):
-
-    return choose(((4 * (c + 1)) + n), n) - 1
-
-
 #%%
 # Plot the term count of each perturbative solver configuration against the average distance, separated by step count
 color_palette = "magma"
