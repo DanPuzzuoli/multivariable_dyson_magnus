@@ -104,11 +104,17 @@ dfM1 = dfM[(dfM['cheb_order'] == 1) & (dfM['exp_order'] == 3)]
 dfM1['label'] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
 dfM2 = dfM[(dfM['cheb_order'] == 0) & (dfM['exp_order'] == 2)]
 dfM2['label'] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
+dfM3 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 4)]
+dfM3['label'] = f'Magnus with term count {dfM3.iloc[0]["num_terms"]}'
+dfM4 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 5)]
+dfM4['label'] = f'Magnus with term count {dfM4.iloc[0]["num_terms"]}'
 
 
 dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
-# dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
-dfM = pd.concat([dfM1, dfM2] )
+dfD = dfD.sort_values('num_terms')
+dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
+dfM = dfM.sort_values('num_terms')
+# dfM = pd.concat([dfM1, dfM2, dfM3] )
 
 # df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
 # df_plotM = dfM.groupby(pd.cut(np.log(dfM['ave_distance']), 30)).min()
@@ -119,6 +125,7 @@ dfM = pd.concat([dfM1, dfM2] )
 # df_plotO = dfO.loc[dfO['ave_distance']==dfO['ave_distance'].min()]
 
 # df_plot = pd.concat([df_plotD, df_plotM, dfO])
+dfO['label'] = 'ODE Solver'
 df_plot = pd.concat([dfD, dfM, dfO])
 
 df_plot.dropna(inplace=True)
@@ -130,8 +137,8 @@ grid = sns.scatterplot(
     data=df_plot,
     palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
     hue="label",
-    style="solver",
-    markers=["o", "X", "s"],
+    style="label",
+    markers=["o", "o", "o", "o", "X", "X", "X", "X", "s"],
 )
 
 ax.set(xscale="log", yscale="log")
@@ -303,3 +310,48 @@ plt.savefig(
 )
 
 plt.show()
+
+# %%
+#%%
+# Plot the term count of each perturbative solver configuration against the average distance, separated by step count
+color_palette = "tab10"
+
+df_plot1 = df_plot.copy()
+df_plot1["num_terms"] = df_plot.apply(
+    lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
+)
+df_plot1["step_count"] = df_plot1["step_count"].map(lambda x: int(x))
+df_plot1.rename(
+    columns={
+        "step_count": "Step Count",
+        "num_terms": "Number of Terms",
+        "ave_distance": "Average Distance",
+        "solver": "Solver",
+        "total_run_time": "Total Run Time (s)"
+    },
+    inplace=True,
+)
+df_plot1 = df_plot1[df_plot1["Solver"] != "ODE Solver"]
+
+fig, ax = plt.subplots(figsize=(4, 4))
+ax.set(xscale="log", yscale="log")
+n_colors = df_plot1["Number of Terms"].nunique()
+ax.set_title("Distance vs Run Time for perturbative solvers")
+grid = sns.scatterplot(
+    y="Total Run Time (s)",
+    x="Average Distance",
+    ax=ax,
+    data=df_plot1,
+    palette=sns.color_palette(color_palette, n_colors=n_colors),
+    hue="Number of Terms",
+    style="Solver",
+)
+plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.savefig(
+    os.path.join(plot_folder, "terms_time_v_distance.png"),
+    facecolor="white",
+    bbox_inches="tight",
+)
+
+plt.show()
+# %%
