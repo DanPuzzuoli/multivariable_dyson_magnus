@@ -13,7 +13,7 @@ from math import factorial
 
 mpl.rcParams["figure.dpi"] = 300
 #%%
-PARTIAL_DATA=False
+PARTIAL_DATA = False
 plot_folder = "plot_folder"
 connection = sqlite3.connect("data/gpu_data.sqlite")
 df = pd.read_sql("SELECT * FROM benchmarks", con=connection)
@@ -27,7 +27,6 @@ def choose(n, k):
 def term_count(n, c):
 
     return int(choose(((4 * (c + 1)) + n), n) - 1)
-
 
 
 # %%
@@ -80,16 +79,19 @@ fig, ax = plt.subplots(figsize=(4, 4))
 n_colors = df_plot.solver.nunique()
 df_plot = df_plot.sort_values(by="solver")
 
-df_plot = df_plot[(df_plot['num_inputs'] == 100) | (df_plot['solver'].isin(['Magnus', 'Dyson']))]
+df_plot = df_plot[
+    (df_plot["num_inputs"] == 100) | (df_plot["solver"].isin(["Magnus", "Dyson"]))
+]
 
 
 def new_labeler(row):
-    if row['solver'] == 'ODE Solver':
+    if row["solver"] == "ODE Solver":
         return "ODE Solver"
     else:
         return f"{row['solver']} ({row['cheb_order']}, {row['exp_order']})"
 
-df_plot['label'] = df_plot.apply(new_labeler, axis=1)
+
+df_plot["label"] = df_plot.apply(new_labeler, axis=1)
 
 df_plot.dropna(inplace=True)
 
@@ -98,7 +100,7 @@ grid = sns.scatterplot(
     x="ave_distance",
     ax=ax,
     data=df_plot,
-    palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
+    palette=sns.color_palette(color_palette, n_colors=df_plot["label"].nunique()),
     hue="label",
     style="label",
     # markers=["o", "o", "o", "o", "X", "X", "X", "X", "s"],
@@ -141,41 +143,43 @@ df_plot["num_terms"] = df_plot.apply(
 n_colors = df_plot.solver.nunique()
 df_plot = df_plot.sort_values(by="solver")
 
-df_plot = df_plot[(df_plot['num_inputs'] == 100) | (df_plot['solver'].isin(['Magnus', 'Dyson']))]
-df_plot['label'] = df_plot.apply(new_labeler, axis=1)
+df_plot = df_plot[
+    (df_plot["num_inputs"] == 100) | (df_plot["solver"].isin(["Magnus", "Dyson"]))
+]
+df_plot["label"] = df_plot.apply(new_labeler, axis=1)
 
 df_plot.dropna(inplace=True)
 #%%
 fig, ax = plt.subplots(figsize=(4, 4))
 
-dfD = df_plot[df_plot['solver'] == 'Dyson']
-dfM = df_plot[df_plot['solver'] == 'Magnus']
-dfO = df_plot[df_plot['solver'] == 'ODE Solver']
+dfD = df_plot[df_plot["solver"] == "Dyson"]
+dfM = df_plot[df_plot["solver"] == "Magnus"]
+dfO = df_plot[df_plot["solver"] == "ODE Solver"]
 
-dfD1 = dfD[(dfD['cheb_order'] == 2) & (dfD['exp_order'] == 5)]
-dfD1['label'] = f'Dyson with term count {dfD1.iloc[0]["num_terms"]}'
-dfD2 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 4)]
-dfD2['label'] = f'Dyson with term count {dfD2.iloc[0]["num_terms"]}'
-dfD3 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 2)]
-dfD3['label'] = f'Dyson with term count {dfD3.iloc[0]["num_terms"]}'
-dfD4 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 3)]
-dfD4['label'] = f'Dyson with term count {dfD4.iloc[0]["num_terms"]}'
+dfD1 = dfD[(dfD["cheb_order"] == 2) & (dfD["exp_order"] == 5)]
+dfD1["label"] = f'Dyson with term count {dfD1.iloc[0]["num_terms"]}'
+dfD2 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 4)]
+dfD2["label"] = f'Dyson with term count {dfD2.iloc[0]["num_terms"]}'
+dfD3 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 2)]
+dfD3["label"] = f'Dyson with term count {dfD3.iloc[0]["num_terms"]}'
+dfD4 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 3)]
+dfD4["label"] = f'Dyson with term count {dfD4.iloc[0]["num_terms"]}'
 # dfD = pd.concat([dfD1, dfD2,dfD4])
 
-dfM1 = dfM[(dfM['cheb_order'] == 1) & (dfM['exp_order'] == 3)]
-dfM1['label'] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
-dfM2 = dfM[(dfM['cheb_order'] == 0) & (dfM['exp_order'] == 2)]
-dfM2['label'] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
-dfM3 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 4)]
-dfM3['label'] = f'Magnus with term count {dfM3.iloc[0]["num_terms"]}'
-dfM4 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 5)]
-dfM4['label'] = f'Magnus with term count {dfM4.iloc[0]["num_terms"]}'
+dfM1 = dfM[(dfM["cheb_order"] == 1) & (dfM["exp_order"] == 3)]
+dfM1["label"] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
+dfM2 = dfM[(dfM["cheb_order"] == 0) & (dfM["exp_order"] == 2)]
+dfM2["label"] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
+dfM3 = dfM[(dfM["cheb_order"] == 2) & (dfM["exp_order"] == 4)]
+dfM3["label"] = f'Magnus with term count {dfM3.iloc[0]["num_terms"]}'
+dfM4 = dfM[(dfM["cheb_order"] == 2) & (dfM["exp_order"] == 5)]
+dfM4["label"] = f'Magnus with term count {dfM4.iloc[0]["num_terms"]}'
 
 
 dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
-dfD = dfD.sort_values('num_terms')
+dfD = dfD.sort_values("num_terms")
 dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
-dfM = dfM.sort_values('num_terms')
+dfM = dfM.sort_values("num_terms")
 # dfM = pd.concat([dfM1, dfM2, dfM3] )
 
 # df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
@@ -188,15 +192,17 @@ dfM = dfM.sort_values('num_terms')
 
 # df_plot = pd.concat([df_plotD, df_plotM, dfO])
 
+
 def new_labeler(row):
-    if row['solver'] == 'ODE Solver':
+    if row["solver"] == "ODE Solver":
         return "ODE Solver"
     else:
         return f"{row['solver']} ({row['cheb_order']}, {row['exp_order']})"
 
-dfO['label'] = 'ODE Solver'
+
+dfO["label"] = "ODE Solver"
 df_plot1 = pd.concat([dfD, dfM, dfO])
-df_plot1['label'] = df_plot1.apply(new_labeler, axis=1)
+df_plot1["label"] = df_plot1.apply(new_labeler, axis=1)
 
 df_plot1.dropna(inplace=True)
 
@@ -205,7 +211,7 @@ grid = sns.scatterplot(
     x="ave_distance",
     ax=ax,
     data=df_plot1,
-    palette=sns.color_palette(color_palette, n_colors=df_plot1['label'].nunique()),
+    palette=sns.color_palette(color_palette, n_colors=df_plot1["label"].nunique()),
     hue="label",
     style="label",
     # markers=["o", "o", "o", "o", "X", "X", "X", "X", "s"],
@@ -239,7 +245,7 @@ grid1 = sns.scatterplot(
     y="total_run_time",
     x="ave_distance",
     ax=ax1,
-    data=df_plot[df_plot['solver'].isin(['Dyson', 'ODE Solver'])],
+    data=df_plot[df_plot["solver"].isin(["Dyson", "ODE Solver"])],
     # palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
     hue="label",
     style="label",
@@ -251,7 +257,7 @@ grid2 = sns.scatterplot(
     y="total_run_time",
     x="ave_distance",
     ax=ax2,
-    data=df_plot[df_plot['solver'].isin(['Magnus', 'ODE Solver'])],
+    data=df_plot[df_plot["solver"].isin(["Magnus", "ODE Solver"])],
     # palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
     hue="label",
     style="label",
@@ -292,10 +298,10 @@ ax2.yaxis.grid(True)
 fig, axs = plt.subplots(figsize=(10, 4))
 ax1 = axs
 
-data1=df_plot[df_plot['solver'].isin(['Dyson', 'ODE Solver'])]
+data1 = df_plot[df_plot["solver"].isin(["Dyson", "ODE Solver"])]
 data1 = data1.sort_values(by="label")
 # color_palette = sns.color_palette("Paired", data1.label.nunique())
-color_palette = sns.color_palette("tab20", data1['label'].nunique())
+color_palette = sns.color_palette("tab20", data1["label"].nunique())
 
 grid1 = sns.scatterplot(
     y="total_run_time",
@@ -331,10 +337,10 @@ plt.show()
 fig, axs = plt.subplots(figsize=(10, 4))
 ax1 = axs
 
-data1=df_plot[df_plot['solver'].isin(['Magnus', 'ODE Solver'])]
+data1 = df_plot[df_plot["solver"].isin(["Magnus", "ODE Solver"])]
 data1 = data1.sort_values(by="label")
 # color_palette = sns.color_palette("Paired", data1.label.nunique())
-color_palette = sns.color_palette("tab20", data1['label'].nunique())
+color_palette = sns.color_palette("tab20", data1["label"].nunique())
 
 grid1 = sns.scatterplot(
     y="total_run_time",
@@ -372,10 +378,10 @@ ax1.yaxis.grid(True)
 fig, axs = plt.subplots(figsize=(10, 4))
 ax1 = axs
 
-data1 = df_plot[df_plot['solver'].isin(['Dyson', 'ODE Solver'])]
+data1 = df_plot[df_plot["solver"].isin(["Dyson", "ODE Solver"])]
 data1 = data1.sort_values(by="label")
 # color_palette = sns.color_palette("Paired", data1.label.nunique())
-color_palette = sns.color_palette("tab20", data1['label'].nunique())
+color_palette = sns.color_palette("tab20", data1["label"].nunique())
 
 grid1 = sns.scatterplot(
     y="total_grad_run_time",
@@ -412,10 +418,10 @@ ax1.yaxis.grid(True)
 fig, axs = plt.subplots(figsize=(10, 4))
 ax1 = axs
 
-data1=df_plot[df_plot['solver'].isin(['Magnus', 'ODE Solver'])]
+data1 = df_plot[df_plot["solver"].isin(["Magnus", "ODE Solver"])]
 data1 = data1.sort_values(by="label")
 # color_palette = sns.color_palette("Paired", data1.label.nunique())
-color_palette = sns.color_palette("tab20", data1['label'].nunique())
+color_palette = sns.color_palette("tab20", data1["label"].nunique())
 
 grid1 = sns.scatterplot(
     y="total_grad_run_time",
@@ -450,7 +456,7 @@ ax1.yaxis.grid(True)
 color_palette = "magma"
 
 df_plot1 = df_plot.copy()
-df_plot1 = df_plot[df_plot['step_count'].isin([10000,50000])]
+df_plot1 = df_plot[df_plot["step_count"].isin([10000, 50000])]
 df_plot1["num_terms"] = df_plot.apply(
     lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
 )
@@ -465,7 +471,7 @@ df_plot1.rename(
     inplace=True,
 )
 df_plot1 = df_plot1[df_plot1["Solver"] != "ODE Solver"]
-df_plot1 = df_plot1[df_plot1['Step Count'] == 10000]
+df_plot1 = df_plot1[df_plot1["Step Count"] == 10000]
 
 fig, ax = plt.subplots(figsize=(4, 4))
 
@@ -483,7 +489,7 @@ grid = sns.lineplot(
     # style="Solver",
     hue="Solver",
     # style="Step Count",
-    marker= 'o'
+    marker="o",
 )
 ax.set(xscale="log", yscale="log")
 plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
@@ -497,7 +503,7 @@ plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 color_palette = "magma"
 
 df_plot1 = df_plot.copy()
-df_plot1 = df_plot[df_plot['step_count'].isin([10000,50000])]
+df_plot1 = df_plot[df_plot["step_count"].isin([10000, 50000])]
 df_plot1["num_terms"] = df_plot.apply(
     lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
 )
@@ -513,8 +519,8 @@ df_plot1.rename(
 )
 df_plot1 = df_plot1[df_plot1["Solver"] != "ODE Solver"]
 df_plot2 = df_plot1.copy()
-df_plot1 = df_plot1[df_plot1['Step Count'] == 10000]
-df_plot2 = df_plot2[df_plot2['Step Count'] == 50000]
+df_plot1 = df_plot1[df_plot1["Step Count"] == 10000]
+df_plot2 = df_plot2[df_plot2["Step Count"] == 50000]
 
 # fig, ax = plt.subplots(figsize=(4, 4))
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
@@ -535,7 +541,7 @@ grid = sns.lineplot(
     hue="Solver",
     # style="Step Count",
     legend=None,
-    marker= 'o'
+    marker="o",
 )
 ax1.set(xscale="log", yscale="log")
 ax1.set_xlim(left=1e1, right=1e4)
@@ -551,7 +557,7 @@ grid = sns.lineplot(
     # style="Solver",
     hue="Solver",
     # style="Step Count",
-    marker= 'o'
+    marker="o",
 )
 ax2.set(xscale="log", yscale="log")
 ax2.set_xlim(left=1e1, right=1e4)

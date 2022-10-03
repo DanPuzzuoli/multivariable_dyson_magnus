@@ -33,7 +33,6 @@ def term_count(n, c):
     return int(choose(((4 * (c + 1)) + n), n) - 1)
 
 
-
 # %%
 # Label the rows of the dataframe with solver, gpu usage, and number of vmapped inputs
 def labeler(row):
@@ -84,36 +83,38 @@ fig, ax = plt.subplots(figsize=(4, 4))
 n_colors = df_plot.solver.nunique()
 df_plot = df_plot.sort_values(by="solver")
 
-df_plot = df_plot[(df_plot['num_inputs'] == 100) | (df_plot['solver'].isin(['Magnus', 'Dyson']))]
+df_plot = df_plot[
+    (df_plot["num_inputs"] == 100) | (df_plot["solver"].isin(["Magnus", "Dyson"]))
+]
 
-dfD = df_plot[df_plot['solver'] == 'Dyson']
-dfM = df_plot[df_plot['solver'] == 'Magnus']
-dfO = df_plot[df_plot['solver'] == 'ODE Solver']
+dfD = df_plot[df_plot["solver"] == "Dyson"]
+dfM = df_plot[df_plot["solver"] == "Magnus"]
+dfO = df_plot[df_plot["solver"] == "ODE Solver"]
 
-dfD1 = dfD[(dfD['cheb_order'] == 2) & (dfD['exp_order'] == 5)]
-dfD1['label'] = f'Dyson with term count {dfD1.iloc[0]["num_terms"]}'
-dfD2 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 4)]
-dfD2['label'] = f'Dyson with term count {dfD2.iloc[0]["num_terms"]}'
-dfD3 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 2)]
-dfD3['label'] = f'Dyson with term count {dfD3.iloc[0]["num_terms"]}'
-dfD4 = dfD[(dfD['cheb_order'] == 0) & (dfD['exp_order'] == 3)]
-dfD4['label'] = f'Dyson with term count {dfD4.iloc[0]["num_terms"]}'
+dfD1 = dfD[(dfD["cheb_order"] == 2) & (dfD["exp_order"] == 5)]
+dfD1["label"] = f'Dyson with term count {dfD1.iloc[0]["num_terms"]}'
+dfD2 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 4)]
+dfD2["label"] = f'Dyson with term count {dfD2.iloc[0]["num_terms"]}'
+dfD3 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 2)]
+dfD3["label"] = f'Dyson with term count {dfD3.iloc[0]["num_terms"]}'
+dfD4 = dfD[(dfD["cheb_order"] == 0) & (dfD["exp_order"] == 3)]
+dfD4["label"] = f'Dyson with term count {dfD4.iloc[0]["num_terms"]}'
 # dfD = pd.concat([dfD1, dfD2,dfD4])
 
-dfM1 = dfM[(dfM['cheb_order'] == 1) & (dfM['exp_order'] == 3)]
-dfM1['label'] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
-dfM2 = dfM[(dfM['cheb_order'] == 0) & (dfM['exp_order'] == 2)]
-dfM2['label'] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
-dfM3 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 4)]
-dfM3['label'] = f'Magnus with term count {dfM3.iloc[0]["num_terms"]}'
-dfM4 = dfM[(dfM['cheb_order'] == 2) & (dfM['exp_order'] == 5)]
-dfM4['label'] = f'Magnus with term count {dfM4.iloc[0]["num_terms"]}'
+dfM1 = dfM[(dfM["cheb_order"] == 1) & (dfM["exp_order"] == 3)]
+dfM1["label"] = f'Magnus with term count {dfM1.iloc[0]["num_terms"]}'
+dfM2 = dfM[(dfM["cheb_order"] == 0) & (dfM["exp_order"] == 2)]
+dfM2["label"] = f'Magnus with term count {dfM2.iloc[0]["num_terms"]}'
+dfM3 = dfM[(dfM["cheb_order"] == 2) & (dfM["exp_order"] == 4)]
+dfM3["label"] = f'Magnus with term count {dfM3.iloc[0]["num_terms"]}'
+dfM4 = dfM[(dfM["cheb_order"] == 2) & (dfM["exp_order"] == 5)]
+dfM4["label"] = f'Magnus with term count {dfM4.iloc[0]["num_terms"]}'
 
 
 dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
-dfD = dfD.sort_values('num_terms')
+dfD = dfD.sort_values("num_terms")
 dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
-dfM = dfM.sort_values('num_terms')
+dfM = dfM.sort_values("num_terms")
 # dfM = pd.concat([dfM1, dfM2, dfM3] )
 
 # df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
@@ -126,15 +127,17 @@ dfM = dfM.sort_values('num_terms')
 
 # df_plot = pd.concat([df_plotD, df_plotM, dfO])
 
+
 def new_labeler(row):
-    if row['solver'] == 'ODE Solver':
+    if row["solver"] == "ODE Solver":
         return "ODE Solver"
     else:
         return f"{row['solver']} ({row['cheb_order']}, {row['exp_order']})"
 
-dfO['label'] = 'ODE Solver'
+
+dfO["label"] = "ODE Solver"
 df_plot = pd.concat([dfD, dfM, dfO])
-df_plot['label'] = df_plot.apply(new_labeler, axis=1)
+df_plot["label"] = df_plot.apply(new_labeler, axis=1)
 
 df_plot.dropna(inplace=True)
 
@@ -143,7 +146,7 @@ grid = sns.scatterplot(
     x="ave_distance",
     ax=ax,
     data=df_plot,
-    palette=sns.color_palette(color_palette, n_colors=df_plot['label'].nunique()),
+    palette=sns.color_palette(color_palette, n_colors=df_plot["label"].nunique()),
     hue="label",
     style="label",
     markers=["o", "o", "o", "o", "X", "X", "X", "X", "s"],
@@ -282,7 +285,7 @@ plt.show()
 color_palette = "magma"
 
 df_plot1 = df_plot.copy()
-df_plot1 = df_plot[df_plot['step_count'].isin([10000,50000])]
+df_plot1 = df_plot[df_plot["step_count"].isin([10000, 50000])]
 df_plot1["num_terms"] = df_plot.apply(
     lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
 )
@@ -311,7 +314,7 @@ grid = sns.lineplot(
     palette=sns.color_palette(color_palette, n_colors=n_colors),
     hue="Step Count",
     style="Solver",
-    markers =['o',  'X', ]
+    markers=["o", "X",],
 )
 ax.set(xscale="log", yscale="log")
 plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
@@ -325,11 +328,11 @@ plt.show()
 
 #%%
 # calc the trendline
-z = np.polyfit(df_plot1['Number of Terms'], df_plot1['Average Distance'], 3)
+z = np.polyfit(df_plot1["Number of Terms"], df_plot1["Average Distance"], 3)
 p = np.poly1d(z)
 # pylab.plot(x,p(x),"r--")
 # the line equation:
-print("y=%.6fx+(%.6f)"%(z[0],z[1]))
+print("y=%.6fx+(%.6f)" % (z[0], z[1]))
 
 
 # plt.show()
@@ -350,7 +353,7 @@ df_plot1.rename(
         "num_terms": "Number of Terms",
         "ave_distance": "Average Distance",
         "solver": "Solver",
-        "total_run_time": "Total Run Time (s)"
+        "total_run_time": "Total Run Time (s)",
     },
     inplace=True,
 )

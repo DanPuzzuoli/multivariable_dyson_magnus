@@ -373,7 +373,12 @@ def main_runner(
         target_signal = (rotary_signal + bipolar_signal).flatten()
 
         results = dense_solver.solve(
-            t_span=[0, T], y0=y0, method="jax_odeint", atol=tol, rtol=tol, signals=[cr_signal, target_signal]
+            t_span=[0, T],
+            y0=y0,
+            method="jax_odeint",
+            atol=tol,
+            rtol=tol,
+            signals=[cr_signal, target_signal],
         )
         return results.y[-1]
 
@@ -608,7 +613,12 @@ def main_runner(
         target_signal = (rotary_signal + bipolar_signal).flatten()
 
         results = sparse_solver.solve(
-            t_span=[0, T], y0=y0_sparse, method="jax_odeint", atol=tol, rtol=tol, signals=[cr_signal, target_signal]
+            t_span=[0, T],
+            y0=y0_sparse,
+            method="jax_odeint",
+            atol=tol,
+            rtol=tol,
+            signals=[cr_signal, target_signal],
         )
 
         # transfer unitary into same basis and frame as the dense simulation
