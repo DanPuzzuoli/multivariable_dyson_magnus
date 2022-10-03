@@ -1,4 +1,5 @@
 #%%
+# Plot wide plots containing every Dyson and Magnus configuration on CPU
 from matplotlib.offsetbox import AnchoredText
 import pandas as pd
 import matplotlib as mpl
@@ -75,7 +76,6 @@ df_plot["total_grad_run_time"] = df_plot["ave_grad_run_time"].map(lambda x: x * 
 df_plot["solver"] = df_plot["solver"].map(
     lambda x: {"dense": "ODE Solver", "dyson": "Dyson", "magnus": "Magnus"}[x]
 )
-df_plot = df_plot.sort_values(by="label")
 df_plot = df_plot[df_plot["gpus"] == 0]
 
 df_plot["num_terms"] = df_plot.apply(
@@ -83,10 +83,10 @@ df_plot["num_terms"] = df_plot.apply(
 )
 #%%
 # Plot average distance vs total run time for 100 inputs, for each solver
-df_plot = df_plot.sort_values(by="solver")
 
 df_plot = df_plot[(df_plot['num_inputs'] == 100) | (df_plot['solver'].isin(['Magnus', 'Dyson']))]
 df_plot['label'] = df_plot.apply(new_labeler, axis=1)
+df_plot = df_plot.sort_values(by="label")
 
 df_plot.dropna(inplace=True)
 #%%
@@ -103,6 +103,7 @@ def setup_plot(ylabel, ax, grad=False):
     ax.set_xlim(left=1e-11, right=1e-1)
     ax.yaxis.grid(True)
 #%%
+# Plot Magnus and Dyson configurations run time stacked on top of each other
 fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 ax1 = axs[0]
 ax2 = axs[1]
@@ -144,7 +145,7 @@ plt.savefig(
 )
 
 # %%
-
+# Plot Magnus and Dyson configurations grad run time stacked on top of each other
 fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 ax3 = axs[0]
 ax4 = axs[1]

@@ -125,8 +125,16 @@ dfM = dfM.sort_values('num_terms')
 # df_plotO = dfO.loc[dfO['ave_distance']==dfO['ave_distance'].min()]
 
 # df_plot = pd.concat([df_plotD, df_plotM, dfO])
+
+def new_labeler(row):
+    if row['solver'] == 'ODE Solver':
+        return "ODE Solver"
+    else:
+        return f"{row['solver']} ({row['cheb_order']}, {row['exp_order']})"
+
 dfO['label'] = 'ODE Solver'
 df_plot = pd.concat([dfD, dfM, dfO])
+df_plot['label'] = df_plot.apply(new_labeler, axis=1)
 
 df_plot.dropna(inplace=True)
 
@@ -199,7 +207,7 @@ grid = sns.scatterplot(
     palette=sns.color_palette(color_palette, n_colors=n_colors),
     hue="label",
     style="label",
-    markers=["o", "o", "o", "X", "X", "X", "s",],
+    markers=["o", "o", "o", "o", "X", "X", "X", "X", "s",],
 )
 
 ax.set(xscale="log", yscale="log")
@@ -249,18 +257,18 @@ df1[["Grad Perturbative Speedup", "Solver", "pert_speed"]] = df1.apply(
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 grid2 = sns.scatterplot(
-    ax=axs[1], y="Grad Perturbative Speedup", x="ave_distance", data=df1
+    ax=axs[1], x="Grad Perturbative Speedup", y="ave_distance", data=df1
 )
-grid = sns.scatterplot(y="Perturbative Speedup", x="ave_distance", data=df1, ax=axs[0])
-axs[0].set(xscale="log")
+grid = sns.scatterplot(x="Perturbative Speedup", y="ave_distance", data=df1, ax=axs[0])
+axs[0].set(yscale="log")
 axs[0].set_title("Perturbative solver speedup on GPU")
-axs[0].set_xlabel("Average Distance")
-axs[0].set_ylim(bottom=0)
+axs[0].set_ylabel("Average Distance")
+axs[0].set_xlim(left=0)
 
-axs[1].set(xscale="log")
+axs[1].set(yscale="log")
 axs[1].set_title("Perturbative solver gradient speedup on GPU")
-axs[1].set_xlabel("Average Distance")
-axs[1].set_ylim(bottom=0)
+axs[1].set_ylabel("Average Distance")
+axs[1].set_xlim(left=0)
 
 plt.savefig(
     os.path.join(plot_folder, "speedup_plots.png"),
@@ -274,6 +282,7 @@ plt.show()
 color_palette = "magma"
 
 df_plot1 = df_plot.copy()
+df_plot1 = df_plot[df_plot['step_count'].isin([10000,50000])]
 df_plot1["num_terms"] = df_plot.apply(
     lambda row: term_count(c=row["cheb_order"], n=row["exp_order"]), axis=1
 )
@@ -290,10 +299,11 @@ df_plot1.rename(
 df_plot1 = df_plot1[df_plot1["Solver"] != "ODE Solver"]
 
 fig, ax = plt.subplots(figsize=(4, 4))
-ax.set(xscale="log", yscale="log")
+
+# ax.set(yscale='log')
 n_colors = df_plot1["Step Count"].nunique()
 ax.set_title("Distance vs number of terms for perturbative solvers")
-grid = sns.scatterplot(
+grid = sns.lineplot(
     x="Number of Terms",
     y="Average Distance",
     ax=ax,
@@ -301,15 +311,28 @@ grid = sns.scatterplot(
     palette=sns.color_palette(color_palette, n_colors=n_colors),
     hue="Step Count",
     style="Solver",
+    markers =['o',  'X', ]
 )
+ax.set(xscale="log", yscale="log")
 plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.savefig(
     os.path.join(plot_folder, "terms_v_distance.png"),
     facecolor="white",
     bbox_inches="tight",
 )
-
 plt.show()
+# %%
+
+#%%
+# calc the trendline
+z = np.polyfit(df_plot1['Number of Terms'], df_plot1['Average Distance'], 3)
+p = np.poly1d(z)
+# pylab.plot(x,p(x),"r--")
+# the line equation:
+print("y=%.6fx+(%.6f)"%(z[0],z[1]))
+
+
+# plt.show()
 
 # %%
 #%%

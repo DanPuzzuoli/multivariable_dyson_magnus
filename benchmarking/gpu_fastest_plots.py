@@ -1,4 +1,7 @@
 #%%
+# This file plots some of the fastest configurations of the perturbative solvers vs the fastest configuration of the ODE Solver
+# The ODE solver is vmapped over 100 inputs, and the configurations of the perturbative solvers are found through binning of different average distance ranges
+#%%
 import pandas as pd
 import matplotlib as mpl
 import seaborn as sns
@@ -57,6 +60,7 @@ def labeler(row):
 
 
 #%%
+# Plot several fast solver configurations for run time
 color_palette = "tab10"
 
 df_plot = df.copy()
@@ -108,17 +112,7 @@ dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
 dfD = dfD.sort_values('num_terms')
 dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
 dfM = dfM.sort_values('num_terms')
-# dfM = pd.concat([dfM1, dfM2, dfM3] )
 
-# df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
-# df_plotM = dfM.groupby(pd.cut(np.log(dfM['ave_distance']), 30)).min()
-
-
-# df_plotD = dfD.loc[dfD['ave_distance']==dfD['ave_distance'].min()]
-# df_plotM = dfM.loc[dfM['ave_distance']==dfM['ave_distance'].min()]
-# df_plotO = dfO.loc[dfO['ave_distance']==dfO['ave_distance'].min()]
-
-# df_plot = pd.concat([df_plotD, df_plotM, dfO])
 
 def new_labeler(row):
     if row['solver'] == 'ODE Solver':
@@ -158,6 +152,7 @@ plt.savefig(
 plt.show()
 
 #%%
+# Plot several fast solver configurations for grad run time
 color_palette = "tab10"
 
 df_plot = df.copy()
@@ -209,17 +204,6 @@ dfD = pd.concat([dfD1, dfD2, dfD3, dfD4])
 dfD = dfD.sort_values('num_terms')
 dfM = pd.concat([dfM1, dfM2, dfM3, dfM4])
 dfM = dfM.sort_values('num_terms')
-# dfM = pd.concat([dfM1, dfM2, dfM3] )
-
-# df_plotD = dfD.groupby(pd.cut(np.log(dfD['ave_distance']), 30)).min()
-# df_plotM = dfM.groupby(pd.cut(np.log(dfM['ave_distance']), 30)).min()
-
-
-# df_plotD = dfD.loc[dfD['ave_distance']==dfD['ave_distance'].min()]
-# df_plotM = dfM.loc[dfM['ave_distance']==dfM['ave_distance'].min()]
-# df_plotO = dfO.loc[dfO['ave_distance']==dfO['ave_distance'].min()]
-
-# df_plot = pd.concat([df_plotD, df_plotM, dfO])
 
 def new_labeler(row):
     if row['solver'] == 'ODE Solver':
@@ -259,6 +243,7 @@ plt.savefig(
 plt.show()
 
 #%%
+# Plot run time and grad run time next to each other
 from matplotlib.offsetbox import AnchoredText
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharex=True)
