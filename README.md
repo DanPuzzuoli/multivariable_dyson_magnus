@@ -1,7 +1,6 @@
-# Multivariable Dyson series and Magnus expansion computational methods demo supplement
+# Paper supplement: Algorithms and software for computing and utilizing the Dyson series and Magnus expansion
 
-This repository contains demonstration usages of the software tools for computing the Dyson series and Magnus expansion, as well as for working with array-valued polynomials.
-
+This repository is a supplement to the paper in the above title, containing notebooks and code for generating the plots in the paper.
 
 ## Running the benchmarking
 
