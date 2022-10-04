@@ -94,4 +94,4 @@ done
 echo "cpus: $c, solver: $s, rft: "$r", vmap: "$v", test: "$t", output_name: "$f", sql_output: "$q", dim: $d"
 cd /u/brosand/projects/danDynamics/multivariable_dyson_magnus
 source /speech6/bedk3_nb/ECOC/anaconda3/bin/activate test
-python /u/brosand/projects/danDynamics/multivariable_dyson_magnus/benchmarking/solver_benchmark.py --output_name $f --n_inputs $n --solver $s --sql $q --dim $d --cpus $c $v $r $t
+python /u/brosand/projects/danDynamics/multivariable_dyson_magnus/benchmarking/single_node_benchmark.py --output_name $f --n_inputs $n --solver $s --sql $q --dim $d --cpus $c $v $r $t

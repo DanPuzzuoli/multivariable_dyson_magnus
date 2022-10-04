@@ -31,7 +31,7 @@ def run_job(cores, gpu, vmap, solver, n_inputs, database_path, proj, dim, test=F
         test_arg = "--test"
     else:
         test_arg = ""
-    bashCommand = f"jbsub -e {err_path}.err -o {err_path}.out{gpu_require} -cores {core_string} -mem 160G -q x86_24h -proj {proj} /u/brosand/projects/danDynamics/multivariable_dyson_magnus/benchmarking/sim_bash.sh --cpus {core_count} --solver {solver} --file_name gpu0v{vmap_string} --n_inputs {n_inputs} --sql {database_path} --dim {dim} {test_arg}"
+    bashCommand = f"jbsub -e {err_path}.err -o {err_path}.out{gpu_require} -cores {core_string} -mem 160G -q x86_24h -proj {proj} /u/brosand/projects/danDynamics/multivariable_dyson_magnus/benchmarking/single_node_bash_runner.sh --cpus {core_count} --solver {solver} --file_name gpu0v{vmap_string} --n_inputs {n_inputs} --sql {database_path} --dim {dim} {test_arg}"
     subprocess.run(bashCommand, shell=True)
 
 
