@@ -1,6 +1,6 @@
 # Paper supplement: Algorithms and software for computing and utilizing the Dyson series and Magnus expansion
 
-This repository is a supplement to the paper in the above title, containing notebooks and code for generating the plots in the paper.
+This repository is a supplement to the paper in the above title, containing notebooks, code, and data, for generating the plots in the paper. This repository works with Qiskit Dynamics 0.3.0.
 
 ## Running the benchmarking
 
