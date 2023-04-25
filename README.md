@@ -18,19 +18,8 @@ and save the data.
 
 The three sets of data are:
 1. GPU odeint parallel saturation test, with script file prefix `odeint_gpu_parallel`. The results are 
-   stored in the file `gpu_parallel_saturation`.
-2. `odeint` benchmark data, with file prefixes 
-
-If running on a server cluster that has an LSF job queue, then you can use [part 1](#part-1-multiple-node-benchmarking) to run multiple simulations at once on different nodes, otherwise skip to [part 2](#part-2-running-benchmark-on-a-single-node) -- you will have to manually rerun the simulations to observe efficacy on different hardware.
-
-### Part 1: Multiple Node Benchmarking
-
-1. Edit the marked paths to your personal folders, on lines `10`, `12`, and `34` in `benchmarks/multi_node_benchmark_lsf.py`. These should point to the error path, the path to store the data output, and the submission bash script (`single_node_bash_runner.sh`), respectively
-
-2. Edit the marked paths to the main python benchmarking file `single_node_benchmark.py` on line `97` of `single_node_bash_runner.sh`
-
-3. No changes need to be made to `single_node_benchmark.py`, so `multi_node_benchmark_lsf.py` can be run to generate all the required data to make the plots
-
-### Part 2: Running benchmark on a single node
-
-For an individual execution of the benchmarking code, the file `single_node_benchmark.py` should be utilized. This file can be run as is without edits, with various default arguments for the possible parameters to examine.
+   stored in the folder `gpu_parallel_saturation`.
+2. `odeint` benchmark data, with file prefixes `odeint_cpu_benchmarks` and `odeint_gpu_benchmarks`,
+   with data stored in folders of the same name.
+3. Perturbative solver benchmark data, with file prefixes `perturbative_cpu_benchmarks` and 
+   `perturbative_gpu_benchmarks`, with data stored in folders of the same name.
