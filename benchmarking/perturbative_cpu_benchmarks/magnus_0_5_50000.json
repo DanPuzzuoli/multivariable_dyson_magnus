@@ -1,0 +1,1 @@
+{"num_inputs": 100, "num_processes": null, "parallel_mode": "vmap", "expansion_method": "magnus", "chebyshev_order": 0, "expansion_order": 5, "n_steps": 50000, "zero_freq": false, "construction_time": 3.3983781337738037, "sim_time": 2639.8867242336273, "average_distance": 8.639518328329679e-08, "grad_time": 7342.708253860474}

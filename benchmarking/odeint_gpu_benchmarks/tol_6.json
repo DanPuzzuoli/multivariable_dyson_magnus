@@ -1,0 +1,1 @@
+{"num_inputs": 7000, "num_processes": 7000, "parallel_mode": "vmap", "tol": 1e-06, "evaluation_mode": "dense", "sim_time": 73.33635330200195, "average_distance": 0.0038890783830512316, "grad_time": 779.3082494735718}

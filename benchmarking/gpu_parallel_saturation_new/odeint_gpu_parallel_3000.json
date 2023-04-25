@@ -1,0 +1,1 @@
+{"num_inputs": 3000, "num_processes": 3000, "parallel_mode": "vmap", "tol": 1e-10, "evaluation_mode": "dense", "sim_time": 205.0947060585022, "grad_time": 2516.535151720047}

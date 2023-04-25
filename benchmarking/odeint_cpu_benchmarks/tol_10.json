@@ -1,0 +1,1 @@
+{"num_inputs": 100, "num_processes": null, "parallel_mode": "pmap", "tol": 1e-10, "evaluation_mode": "dense", "sim_time": 455.01326608657837, "average_distance": 2.5484938529034994e-08, "grad_time": 2567.7173449993134}

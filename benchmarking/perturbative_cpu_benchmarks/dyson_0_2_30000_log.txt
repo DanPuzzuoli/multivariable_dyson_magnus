@@ -1,0 +1,1 @@
+2023-04-12 10:14:58.625887: E external/xla/xla/stream_executor/cuda/cuda_driver.cc:268] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
